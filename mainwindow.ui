@@ -6,17 +6,92 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>800</width>
+    <width>990</width>
     <height>600</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>MainWindow</string>
   </property>
-  <widget class="QWidget" name="centralwidget"/>
-  <widget class="QMenuBar" name="menubar"/>
+  <widget class="QWidget" name="centralwidget">
+   <widget class="QPushButton" name="Button_Maze">
+    <property name="geometry">
+     <rect>
+      <x>90</x>
+      <y>240</y>
+      <width>180</width>
+      <height>70</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Maze</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="Button_EightQueen">
+    <property name="geometry">
+     <rect>
+      <x>390</x>
+      <y>240</y>
+      <width>180</width>
+      <height>70</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Eight Queen</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="Button_Huffman">
+    <property name="geometry">
+     <rect>
+      <x>670</x>
+      <y>240</y>
+      <width>180</width>
+      <height>70</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Huffman Encoding</string>
+    </property>
+   </widget>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>990</width>
+     <height>26</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menu_czx">
+    <property name="title">
+     <string>Visual Algorithm -czx</string>
+    </property>
+   </widget>
+   <addaction name="menu_czx"/>
+  </widget>
   <widget class="QStatusBar" name="statusbar"/>
  </widget>
  <resources/>
- <connections/>
+ <connections>
+  <connection>
+   <sender>Button_Maze</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>OpenMazeUI()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>236</x>
+     <y>304</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>251</x>
+     <y>472</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+ <slots>
+  <slot>OpenMazeUI()</slot>
+ </slots>
 </ui>
