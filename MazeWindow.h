@@ -15,6 +15,15 @@ public:
     explicit MazeWindow(QWidget *parent = nullptr);
     ~MazeWindow();
 
+signals:
+
+    void OnBackButtonClick();
+
+private slots:
+
+    void CloseSelfWindow();
+    void BackButtonClick();
+
 private:
     Ui::MazeWindow *ui;
 };

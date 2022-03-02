@@ -73,24 +73,7 @@
   <widget class="QStatusBar" name="statusbar"/>
  </widget>
  <resources/>
- <connections>
-  <connection>
-   <sender>Button_Maze</sender>
-   <signal>clicked()</signal>
-   <receiver>MainWindow</receiver>
-   <slot>OpenMazeUI()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>236</x>
-     <y>304</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>251</x>
-     <y>472</y>
-    </hint>
-   </hints>
-  </connection>
- </connections>
+ <connections/>
  <slots>
   <slot>OpenMazeUI()</slot>
  </slots>

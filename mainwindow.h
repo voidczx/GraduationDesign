@@ -17,11 +17,19 @@ public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
-public slots:
+signals:
 
-    void OpenMazeUI();
+    void OnMazeButtonClick();
 
 private:
     Ui::MainWindow *ui;
+
+private slots:
+
+    void MazeButtonClick();
+
+    void OpenMazeUI();
+    void ShowMainWindow();
+
 };
 #endif // MAINWINDOW_H
