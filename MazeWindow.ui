@@ -6,12 +6,12 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1055</width>
-    <height>585</height>
+    <width>990</width>
+    <height>600</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Form</string>
+   <string notr="true">Maze</string>
   </property>
   <widget class="QPushButton" name="Button_Back">
    <property name="geometry">

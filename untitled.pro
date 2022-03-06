@@ -9,15 +9,18 @@ CONFIG += c++11
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
+    EightQueenWindow.cpp \
     MazeWindow.cpp \
     main.cpp \
     mainwindow.cpp
 
 HEADERS += \
+    EightQueenWindow.h \
     MazeWindow.h \
     mainwindow.h
 
 FORMS += \
+    EightQueenWindow.ui \
     MazeWindow.ui \
     mainwindow.ui
 

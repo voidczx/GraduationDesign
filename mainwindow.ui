@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string notr="true">Visual Algorithm -czx</string>
   </property>
   <widget class="QWidget" name="centralwidget">
    <widget class="QPushButton" name="Button_Maze">

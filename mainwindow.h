@@ -20,6 +20,7 @@ public:
 signals:
 
     void OnMazeButtonClick();
+    void OnEightQueenButtonClick();
 
 private:
     Ui::MainWindow *ui;
@@ -27,8 +28,10 @@ private:
 private slots:
 
     void MazeButtonClick();
+    void EightQueenButtonClick();
 
     void OpenMazeUI();
+    void OpenEightQueenUI();
     void ShowMainWindow();
 
 };
