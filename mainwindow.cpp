@@ -10,15 +10,19 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    connect(ui->Button_Maze, SIGNAL(clicked(bool)), this, SLOT(MazeButtonClick()));
-    connect(this, SIGNAL(OnMazeButtonClick()), this, SLOT(OpenMazeUI()));
-    connect(ui->Button_EightQueen, SIGNAL(clicked(bool)), this, SLOT(EightQueenButtonClick()));
-    connect(this, SIGNAL(OnEightQueenButtonClick()), this, SLOT(OpenEightQueenUI()));
+    InitializeConnection();
 }
 
 MainWindow::~MainWindow()
 {
     delete ui;
+}
+
+void MainWindow::InitializeConnection(){
+    connect(ui->Button_Maze, SIGNAL(clicked(bool)), this, SLOT(MazeButtonClick()));
+    connect(this, SIGNAL(OnMazeButtonClick()), this, SLOT(OpenMazeUI()));
+    connect(ui->Button_EightQueen, SIGNAL(clicked(bool)), this, SLOT(EightQueenButtonClick()));
+    connect(this, SIGNAL(OnEightQueenButtonClick()), this, SLOT(OpenEightQueenUI()));
 }
 
 void MainWindow::MazeButtonClick(){

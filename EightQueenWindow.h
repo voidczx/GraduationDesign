@@ -28,6 +28,8 @@ private slots:
     void CloseSelf();
 
 private:
+
+    void InitializeConnection();
     void InitializeMap();
 
     Ui::EightQueenWindow *ui;

@@ -8,14 +8,18 @@ MazeWindow::MazeWindow(QWidget *parent) :
     ui(new Ui::MazeWindow)
 {
     ui->setupUi(this);
-    connect(ui->Button_Back, SIGNAL(clicked(bool)), this, SLOT(BackButtonClick()));
-    connect(this, SIGNAL(OnBackButtonClick()), this, SLOT(CloseSelfWindow()));
+    InitializeConnection();
 }
 
 MazeWindow::~MazeWindow()
 {
     qDebug("[MazeWindow::~MazeWindow()] Maze UI has been destroyed.");
     delete ui;
+}
+
+void MazeWindow::InitializeConnection(){
+    connect(ui->Button_Back, SIGNAL(clicked(bool)), this, SLOT(BackButtonClick()));
+    connect(this, SIGNAL(OnBackButtonClick()), this, SLOT(CloseSelfWindow()));
 }
 
 void MazeWindow::CloseSelfWindow(){

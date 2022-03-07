@@ -6,8 +6,7 @@ EightQueenWindow::EightQueenWindow(QWidget *parent) :
     ui(new Ui::EightQueenWindow)
 {
     ui->setupUi(this);
-    connect(this->ui->Button_Back, SIGNAL(clicked(bool)), this, SLOT(BackButtonClicked()));
-    connect(this, SIGNAL(OnBackButtonClicked()), this, SLOT(CloseSelf()));
+    InitializeConnection();
     InitializeMap();
     // TODO: UnitLabel->installEventFilter;
 }
@@ -21,6 +20,12 @@ EightQueenWindow::~EightQueenWindow()
 bool EightQueenWindow::eventFilter(QObject *watched, QEvent *event){
     return false;
 }
+
+void EightQueenWindow::InitializeConnection(){
+    connect(this->ui->Button_Back, SIGNAL(clicked(bool)), this, SLOT(BackButtonClicked()));
+    connect(this, SIGNAL(OnBackButtonClicked()), this, SLOT(CloseSelf()));
+}
+
 void EightQueenWindow::InitializeMap(){
     if (ui->EightQueenMap != nullptr){
         for (int Row = 0; Row < MapSize; Row++){

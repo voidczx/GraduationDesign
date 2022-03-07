@@ -15,6 +15,8 @@ public:
     explicit MazeWindow(QWidget *parent = nullptr);
     ~MazeWindow();
 
+    void InitializeConnection();
+
 signals:
 
     void OnBackButtonClick();
