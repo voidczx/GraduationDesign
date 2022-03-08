@@ -1,6 +1,9 @@
 #include "EightQueenWindow.h"
 #include "ui_EightQueenWindow.h"
 
+#include "QDebug"
+#include "QMouseEvent"
+
 EightQueenWindow::EightQueenWindow(QWidget *parent) :
     QWidget(parent),
     ui(new Ui::EightQueenWindow)
@@ -8,7 +11,7 @@ EightQueenWindow::EightQueenWindow(QWidget *parent) :
     ui->setupUi(this);
     InitializeConnection();
     InitializeMap();
-    // TODO: UnitLabel->installEventFilter;
+    // TODO:
 }
 
 EightQueenWindow::~EightQueenWindow()
@@ -18,7 +21,20 @@ EightQueenWindow::~EightQueenWindow()
 }
 
 bool EightQueenWindow::eventFilter(QObject *watched, QEvent *event){
-    return false;
+    if (QLabel* EventLabel = qobject_cast<QLabel*>(watched)){
+        if (event->type() == QEvent::MouseButtonPress){
+            if (QMouseEvent* MouseEvent = dynamic_cast<QMouseEvent*>(event)){
+                if (MouseEvent->button() == Qt::LeftButton){
+                    qDebug() << "Press Label Pos:" << "(" << EventLabel->parentWidget()->pos().x() + EventLabel->pos().x() << ", " << EventLabel->parentWidget()->pos().y() + EventLabel->pos().y() << ")";
+                    QLabel TestLabel(this);
+
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+    return QWidget::eventFilter(watched, event);
 }
 
 void EightQueenWindow::InitializeConnection(){
@@ -27,27 +43,21 @@ void EightQueenWindow::InitializeConnection(){
 }
 
 void EightQueenWindow::InitializeMap(){
-    if (ui->EightQueenMap != nullptr){
+    if (ui->GridLayout_EightQueen != nullptr){
         for (int Row = 0; Row < MapSize; Row++){
-            QLayoutItem* MapRowLayOutItem = ui->EightQueenMap->itemAt(Row);
-            if (MapRowLayOutItem != nullptr){
-                QHBoxLayout* MapRowLayOut = qobject_cast<QHBoxLayout*>(MapRowLayOutItem->layout());
-                if (MapRowLayOut != nullptr){
-                    for (int Col = 0; Col < MapSize; Col++){
-                        QLayoutItem* UnitLayoutItem = MapRowLayOut->itemAt(Col);
-                        if (UnitLayoutItem != nullptr){
-                             QLabel* UnitLabel = qobject_cast<QLabel*>(UnitLayoutItem->widget());
-                             if (UnitLabel != nullptr){
-                                 // TODO: Put labels in a structure.
-                                 const bool bBlack = ((Row & 1) ^ (Col & 1));
-                                 if (bBlack){
-                                    UnitLabel->setStyleSheet("QLabel{background:#000000;}");
-                                 }
-                                 else{
-                                    UnitLabel->setStyleSheet("QLabel{background:#ffffff;}");
-                                 }
-                             }
+            for (int Col = 0; Col < MapSize; Col++){
+                QLayoutItem* UnitItem = ui->GridLayout_EightQueen->itemAtPosition(Row, Col);
+                if (UnitItem != nullptr){
+                    QLabel* UnitLabel = qobject_cast<QLabel*>(UnitItem->widget());
+                    if (UnitLabel != nullptr){
+                        const bool bBlack = ((Row & 1) ^ (Col & 1));
+                        if (bBlack){
+                            UnitLabel->setStyleSheet("QLabel{background:#000000;}");
                         }
+                        else{
+                            UnitLabel->setStyleSheet("QLabel{background:#ffffff;}");
+                        }
+                        UnitLabel->installEventFilter(this);
                     }
                 }
             }
