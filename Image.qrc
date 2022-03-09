@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/EightQueen">
+        <file alias="QueenChess.jpg">Image/QueenChess.jpg</file>
+    </qresource>
+</RCC>

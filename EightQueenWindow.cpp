@@ -25,9 +25,16 @@ bool EightQueenWindow::eventFilter(QObject *watched, QEvent *event){
         if (event->type() == QEvent::MouseButtonPress){
             if (QMouseEvent* MouseEvent = dynamic_cast<QMouseEvent*>(event)){
                 if (MouseEvent->button() == Qt::LeftButton){
-                    qDebug() << "Press Label Pos:" << "(" << EventLabel->parentWidget()->pos().x() + EventLabel->pos().x() << ", " << EventLabel->parentWidget()->pos().y() + EventLabel->pos().y() << ")";
-                    QLabel TestLabel(this);
-
+                    QLabel* TestLabel = new QLabel(ui->widget);
+                    TestLabel->setGeometry(EventLabel->pos().x(),
+                                          EventLabel->pos().y(),
+                                          EventLabel->geometry().width(),
+                                          EventLabel->geometry().height());
+                    QPixmap QueenChessPixmap(QString(":/EightQueen/QueenChess.jpg"));
+                    QueenChessPixmap.scaled(EventLabel->size());
+                    TestLabel->setScaledContents(true);
+                    TestLabel->setPixmap(QueenChessPixmap);
+                    TestLabel->show();
                     return true;
                 }
             }
