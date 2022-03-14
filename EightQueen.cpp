@@ -37,8 +37,8 @@ bool EightQueen::TryReduceQueenChess(){
 void EightQueen::AfterAddQueenChess(){
     uint8_t Row = ChessArray.back().Row;
     uint8_t Col = ChessArray.back().Col;
-    const uint8_t BiasFlag = Row - Col;
-    const uint8_t AntiBiasFlag = Row + Col;
+    const int32_t BiasFlag = Row - Col;
+    const int32_t AntiBiasFlag = Row + Col;
     uint8_t ResPositionNum = 0;
     for (uint8_t RowIndex = 0; RowIndex < MapSize; RowIndex++){
         for (uint8_t ColIndex = 0; ColIndex < MapSize; ColIndex++){

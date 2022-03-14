@@ -3,6 +3,8 @@
 
 #include <QWidget>
 
+#include "EightQueen.h"
+
 namespace Ui {
 class EightQueenWindow;
 }
@@ -32,9 +34,17 @@ private:
     void InitializeConnection();
     void InitializeMap();
 
+    void TryAddChess(const uint8_t& Row, const uint8_t& Col);
+    void StepForward();
+    void OnAddChessFail(const uint8_t& Row, const uint8_t& Col);
+    void OnSuccess();
+    void OnFail();
+
     Ui::EightQueenWindow *ui;
 
-    const uint8_t MapSize = 8;
+    const static uint8_t MapSize;
+    const static int32_t AddChessFailWarningTime;
+    EightQueen Core;
 };
 
 #endif // EIGHTQUENEWINDOW_H
