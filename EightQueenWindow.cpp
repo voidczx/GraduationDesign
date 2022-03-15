@@ -4,7 +4,10 @@
 #include "QDebug"
 #include "QMouseEvent"
 #include "QPropertyAnimation"
+#include "qparallelanimationgroup.h"
+#include "qsequentialanimationgroup.h"
 #include "QElapsedTimer"
+#include "QGraphicsOpacityEffect"
 
 const uint8_t EightQueenWindow::MapSize = 8;
 const int32_t EightQueenWindow::AddChessFailWarningTime = 500;
@@ -50,6 +53,18 @@ void EightQueenWindow::BackButtonClicked(){
     emit(OnBackButtonClicked());
 }
 
+void EightQueenWindow::RemoveChessButtonClicked(){
+    TryRemoveChess();
+}
+
+void EightQueenWindow::ViewMapButtonPressed(){
+    ViewMap();
+}
+
+void EightQueenWindow::ViewMapButtonReleased(){
+    RecoverMap();
+}
+
 void EightQueenWindow::CloseSelf(){
     setAttribute(Qt::WA_DeleteOnClose, true);
     this->close();
@@ -58,6 +73,9 @@ void EightQueenWindow::CloseSelf(){
 void EightQueenWindow::InitializeConnection(){
     connect(this->ui->Button_Back, SIGNAL(clicked(bool)), this, SLOT(BackButtonClicked()));
     connect(this, SIGNAL(OnBackButtonClicked()), this, SLOT(CloseSelf()));
+    connect(this->ui->Button_RemoveChess, SIGNAL(clicked(bool)), this, SLOT(RemoveChessButtonClicked()));
+    connect(this->ui->Button_ViewMap, SIGNAL(pressed()), this, SLOT(ViewMapButtonPressed()));
+    connect(this->ui->Button_ViewMap, SIGNAL(released()), this, SLOT(ViewMapButtonReleased()));
 }
 
 void EightQueenWindow::InitializeMap(){
@@ -91,7 +109,7 @@ void EightQueenWindow::TryAddChess(const uint8_t& Row, const uint8_t& Col){
             if (UnitItem != nullptr){
                 QLabel* UnitLabel = qobject_cast<QLabel*>(UnitItem->widget());
                 if (UnitLabel != nullptr){
-                    QLabel* NewChessLabel = new QLabel(ui->widget);
+                    QLabel* NewChessLabel = new QLabel(ui->layoutWidget);
                     NewChessLabel->setGeometry(UnitLabel->pos().x(),
                                           UnitLabel->pos().y(),
                                           UnitLabel->geometry().width(),
@@ -101,6 +119,7 @@ void EightQueenWindow::TryAddChess(const uint8_t& Row, const uint8_t& Col){
                     NewChessLabel->setScaledContents(true);
                     NewChessLabel->setPixmap(QueenChessPixmap);
                     NewChessLabel->show();
+                    ChessStack.push(NewChessLabel);
                 }
             }
         }
@@ -137,11 +156,94 @@ void EightQueenWindow::TryAddChess(const uint8_t& Row, const uint8_t& Col){
     }
 }
 
-void EightQueenWindow::StepForward(){
-
+void EightQueenWindow::TryRemoveChess(){
+    if (Core.TryReduceQueenChess()){
+        QLabel* RemoveChess = ChessStack.top();
+        if (RemoveChess != nullptr){
+           const QRect& OriginalGeometry = RemoveChess->geometry();
+           const QRect MagnifyingGeometry = QRect(
+                       OriginalGeometry.x() - OriginalGeometry.width() * 0.2f / 2.0f,
+                       OriginalGeometry.y() - OriginalGeometry.height() * 0.2f / 2.0f,
+                       OriginalGeometry.width() * 1.2f,
+                       OriginalGeometry.height() * 1.2f);
+           const QRect ShrinkingGeometry = QRect(
+                       OriginalGeometry.x() + OriginalGeometry.width() * 0.2f / 2.0f,
+                       OriginalGeometry.y() + OriginalGeometry.height() * 0.2f / 2.0f,
+                       OriginalGeometry.width() * 0.8f,
+                       OriginalGeometry.height() * 0.8f);
+           QParallelAnimationGroup* ParallelGroup = new QParallelAnimationGroup(RemoveChess);
+           QSequentialAnimationGroup* ScaleGroup = new QSequentialAnimationGroup(RemoveChess);
+           QPropertyAnimation* MagnifyingAnimation = new QPropertyAnimation(RemoveChess, "geometry");
+           MagnifyingAnimation->setStartValue(OriginalGeometry);
+           MagnifyingAnimation->setEndValue(MagnifyingGeometry);
+           MagnifyingAnimation->setDuration(500);
+           ScaleGroup->addAnimation(MagnifyingAnimation);
+           QPropertyAnimation* ShrinkingAnimation = new QPropertyAnimation(RemoveChess, "geometry");
+           ShrinkingAnimation->setStartValue(MagnifyingGeometry);
+           ShrinkingAnimation->setEndValue(ShrinkingGeometry);
+           ShrinkingAnimation->setDuration(500);
+           ScaleGroup->addAnimation(ShrinkingAnimation);
+           ParallelGroup->addAnimation(ScaleGroup);
+           QGraphicsOpacityEffect* LabelOpacity = new QGraphicsOpacityEffect(RemoveChess);
+           LabelOpacity->setOpacity(1.0f);
+           RemoveChess->setGraphicsEffect(LabelOpacity);
+           if (LabelOpacity != nullptr){
+               QPropertyAnimation* OpacityGroup = new QPropertyAnimation(LabelOpacity, "opacity");
+               OpacityGroup->setStartValue(1.0f);
+               OpacityGroup->setEndValue(0.0f);
+               OpacityGroup->setDuration(1000);
+               ParallelGroup->addAnimation(OpacityGroup);
+           }
+           ParallelGroup->start(QAbstractAnimation::DeleteWhenStopped);
+           connect(ParallelGroup, &QAbstractAnimation::finished, [RemoveChess]{
+                RemoveChess->deleteLater();
+           });
+           ChessStack.pop();
+        }
+    }
+    else{
+        qDebug() << "Remove Chess Fail !!";
+    }
 }
 
-void EightQueenWindow::OnAddChessFail(const uint8_t& Row, const uint8_t& Col){
+void EightQueenWindow::ViewMap(){
+    if (!MemoryMap.empty()){
+        return;
+    }
+    for (uint8_t Row = 0; Row < MapSize; Row++){
+        for (uint8_t Col = 0; Col < MapSize; Col++){
+            if (!Core.IsPositionValid(Row, Col)){
+                if (ui->GridLayout_EightQueen != nullptr){
+                    QLayoutItem* UnitItem = ui->GridLayout_EightQueen->itemAtPosition(Row, Col);
+                    if (UnitItem != nullptr){
+                        QLabel* InvalidLabel = qobject_cast<QLabel*>(UnitItem->widget());
+                        if (InvalidLabel != nullptr){
+                            InvalidLabel->setStyleSheet("QLabel{background:#ff0000;}");
+                            bool bIsBlack = ((Row & 1) ^ (Col & 1));
+                            MemoryMap.insert(InvalidLabel, bIsBlack);
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+void EightQueenWindow::RecoverMap(){
+    for (auto Iter = MemoryMap.begin(); Iter != MemoryMap.end(); Iter++){
+        if (Iter.key() != nullptr){
+            if (Iter.value()){
+                Iter.key()->setStyleSheet("QLabel{background:#000000}");
+            }
+            else{
+                Iter.key()->setStyleSheet("QLabel{background:#ffffff}");
+            }
+        }
+    }
+    MemoryMap.clear();
+}
+
+void EightQueenWindow::StepForward(){
 
 }
 

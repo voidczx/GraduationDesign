@@ -3,6 +3,10 @@
 
 #include <QWidget>
 
+#include "qlabel.h"
+#include "qstack.h"
+#include "qmap.h"
+
 #include "EightQueen.h"
 
 namespace Ui {
@@ -26,6 +30,9 @@ signals:
 private slots:
 
     void BackButtonClicked();
+    void RemoveChessButtonClicked();
+    void ViewMapButtonPressed();
+    void ViewMapButtonReleased();
 
     void CloseSelf();
 
@@ -35,8 +42,10 @@ private:
     void InitializeMap();
 
     void TryAddChess(const uint8_t& Row, const uint8_t& Col);
+    void TryRemoveChess();
+    void ViewMap();
+    void RecoverMap();
     void StepForward();
-    void OnAddChessFail(const uint8_t& Row, const uint8_t& Col);
     void OnSuccess();
     void OnFail();
 
@@ -45,6 +54,8 @@ private:
     const static uint8_t MapSize;
     const static int32_t AddChessFailWarningTime;
     EightQueen Core;
+    QStack<QLabel*> ChessStack;
+    QMap<QLabel*, bool> MemoryMap;
 };
 
 #endif // EIGHTQUENEWINDOW_H

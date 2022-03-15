@@ -16,17 +16,17 @@
   <widget class="QPushButton" name="Button_Back">
    <property name="geometry">
     <rect>
-     <x>40</x>
-     <y>40</y>
-     <width>93</width>
-     <height>28</height>
+     <x>30</x>
+     <y>30</y>
+     <width>131</width>
+     <height>51</height>
     </rect>
    </property>
    <property name="text">
     <string>Back</string>
    </property>
   </widget>
-  <widget class="QWidget" name="">
+  <widget class="QWidget" name="layoutWidget">
    <property name="geometry">
     <rect>
      <x>362</x>
@@ -488,6 +488,32 @@
      </widget>
     </item>
    </layout>
+  </widget>
+  <widget class="QPushButton" name="Button_RemoveChess">
+   <property name="geometry">
+    <rect>
+     <x>100</x>
+     <y>260</y>
+     <width>171</width>
+     <height>51</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Remove Chess</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="Button_ViewMap">
+   <property name="geometry">
+    <rect>
+     <x>100</x>
+     <y>560</y>
+     <width>171</width>
+     <height>51</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>View Map</string>
+   </property>
   </widget>
  </widget>
  <resources/>
