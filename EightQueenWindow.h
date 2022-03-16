@@ -6,6 +6,7 @@
 #include "qlabel.h"
 #include "qstack.h"
 #include "qmap.h"
+#include "QTimer"
 
 #include "EightQueen.h"
 
@@ -49,13 +50,26 @@ private:
     void OnSuccess();
     void OnFail();
 
+    void BeginAutoState();
+    void AutoPlay();
+    void AutoStepForward();
+    void AutoPause();
+    void EndAutoState();
+
     Ui::EightQueenWindow *ui;
 
     const static uint8_t MapSize;
     const static int32_t AddChessFailWarningTime;
+    const static int32_t AutoPlaySpaceTime;
+
     EightQueen Core;
-    QStack<QLabel*> ChessStack;
-    QMap<QLabel*, bool> MemoryMap;
+
+    QStack<QLabel*> ChessStack; // TODO: move to core
+    QMap<QLabel*, bool> MemoryMap; // TODO: delete and change RecoverMap()
+
+    bool bAutoState = false;
+    bool bAutoPlay = false;
+    QTimer* AutoPlayerTimer = nullptr;
 };
 
 #endif // EIGHTQUENEWINDOW_H

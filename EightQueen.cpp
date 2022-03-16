@@ -15,6 +15,25 @@ bool EightQueen::IsPositionValid(const uint8_t& Row, const uint8_t& Col) const{
     return true;
 }
 
+bool EightQueen::TryAddQueenChess_Manually(const uint8_t& Row, const uint8_t& Col){
+    return TryAddQueenChess(Row, Col);
+}
+
+bool EightQueen::TryAddQueenChess_Auto(){
+
+
+    return false;
+}
+
+bool EightQueen::TryReduceQueenChess_Manually(){
+    return TryReduceQueenChess();
+}
+
+bool EightQueen::TryReduceQueenChess_Auto(){
+
+    return false;
+}
+
 bool EightQueen::TryAddQueenChess(const uint8_t& Row, const uint8_t& Col){
     if (!IsPositionValid(Row, Col)){
         return false;

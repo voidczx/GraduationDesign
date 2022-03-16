@@ -11,6 +11,7 @@
 
 const uint8_t EightQueenWindow::MapSize = 8;
 const int32_t EightQueenWindow::AddChessFailWarningTime = 500;
+const int32_t EightQueenWindow::AutoPlaySpaceTime = 500;
 
 EightQueenWindow::EightQueenWindow(QWidget *parent) :
     QWidget(parent),
@@ -102,7 +103,7 @@ void EightQueenWindow::InitializeMap(){
 }
 
 void EightQueenWindow::TryAddChess(const uint8_t& Row, const uint8_t& Col){
-    if (Core.TryAddQueenChess(Row, Col)){
+    if (Core.TryAddQueenChess_Manually(Row, Col)){
         qDebug() << "Add Success At " << Row << ", " << Col;
         if (ui->GridLayout_EightQueen != nullptr){
             QLayoutItem* UnitItem = ui->GridLayout_EightQueen->itemAtPosition(Row, Col);
@@ -157,7 +158,7 @@ void EightQueenWindow::TryAddChess(const uint8_t& Row, const uint8_t& Col){
 }
 
 void EightQueenWindow::TryRemoveChess(){
-    if (Core.TryReduceQueenChess()){
+    if (Core.TryReduceQueenChess_Manually()){
         QLabel* RemoveChess = ChessStack.top();
         if (RemoveChess != nullptr){
            const QRect& OriginalGeometry = RemoveChess->geometry();
@@ -252,6 +253,46 @@ void EightQueenWindow::OnSuccess(){
 }
 
 void EightQueenWindow::OnFail(){
+
+}
+
+void EightQueenWindow::BeginAutoState(){
+    if (bAutoState){
+        return;
+    }
+    bAutoState = true;
+    AutoPlay();
+}
+
+void EightQueenWindow::AutoPlay(){
+    if (bAutoPlay || !bAutoState){
+        return;
+    }
+    bAutoPlay = true;
+    if (AutoPlayerTimer == nullptr){
+        AutoPlayerTimer = new QTimer(this);
+        AutoPlayerTimer->setInterval(AutoPlaySpaceTime);
+        connect(AutoPlayerTimer, &QTimer::timeout, this, &EightQueenWindow::AutoStepForward);
+    }
+    AutoPlayerTimer->start();
+}
+
+void EightQueenWindow::AutoStepForward(){
+
+}
+
+void EightQueenWindow::AutoPause(){
+    if (!bAutoPlay || !bAutoState){
+        return;
+    }
+    bAutoPlay = false;
+    if (AutoPlayerTimer == nullptr){
+        return;
+    }
+    AutoPlayerTimer->stop();
+}
+
+void EightQueenWindow::EndAutoState(){
 
 }
 

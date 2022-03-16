@@ -14,13 +14,18 @@ public:
     EightQueen(const uint8_t& MapSize);
 
     bool IsPositionValid(const uint8_t& Row, const uint8_t& Col) const;
-    bool TryAddQueenChess(const uint8_t& Row, const uint8_t& Col);
-    bool TryReduceQueenChess();
+    bool TryAddQueenChess_Manually(const uint8_t& Row, const uint8_t& Col);
+    bool TryAddQueenChess_Auto();
+    bool TryReduceQueenChess_Manually();
+    bool TryReduceQueenChess_Auto();
 
     bool IsSuccess() const { return bSuccess; }
     bool IsFail() const { return bFail; }
 
 private:
+
+    bool TryAddQueenChess(const uint8_t& Row, const uint8_t& Col);
+    bool TryReduceQueenChess();
 
     void AfterAddQueenChess();
     void BeforeReduceQueenChess();
