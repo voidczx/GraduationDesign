@@ -4,10 +4,16 @@
 #include "vector"
 #include "deque"
 #include "stdint.h"
+#include "unordered_map"
 
 struct QueenChess;
 
 class EightQueen{
+
+    enum AutoProcess{
+        Add = 0,
+        Reduce = 1,
+    };
 
 public:
 
@@ -19,8 +25,13 @@ public:
     bool TryReduceQueenChess_Manually();
     bool TryReduceQueenChess_Auto();
 
+    void InitializeAutoState();
+    void ClearAutoState();
+    void StepBack_Auto();
+
     bool IsSuccess() const { return bSuccess; }
     bool IsFail() const { return bFail; }
+    bool IsAutoTotallyFailed(){ return bFail && AutoChessStack.empty(); }
 
 private:
 
@@ -31,7 +42,11 @@ private:
     void BeforeReduceQueenChess();
 
     std::vector<std::vector<bool>> Map;
+
     std::deque<QueenChess> ChessArray;
+    std::unordered_map<uint8_t, uint8_t> AutoMap;
+    std::deque<int32_t> AutoChessStack;
+    std::deque<AutoProcess> ProcessStack;
 
     const uint8_t MapSize;
     bool bSuccess = false;

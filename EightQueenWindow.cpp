@@ -10,8 +10,9 @@
 #include "QGraphicsOpacityEffect"
 
 const uint8_t EightQueenWindow::MapSize = 8;
-const int32_t EightQueenWindow::AddChessFailWarningTime = 500;
-const int32_t EightQueenWindow::AutoPlaySpaceTime = 500;
+const int64_t EightQueenWindow::AddChessFailWarningTime = 500;
+const int64_t EightQueenWindow::AutoPlaySpaceTime = 500;
+const int64_t EightQueenWindow::AutoViewMapTime = 500;
 
 EightQueenWindow::EightQueenWindow(QWidget *parent) :
     QWidget(parent),
@@ -99,6 +100,9 @@ void EightQueenWindow::InitializeMap(){
                 }
             }
         }
+    }
+    if (ui->Button_AutoPlayPause != nullptr){
+        ui->Button_AutoPlayPause->setText("Play");
     }
 }
 
@@ -245,23 +249,65 @@ void EightQueenWindow::RecoverMap(){
 }
 
 void EightQueenWindow::StepForward(){
+    if (!bAutoState){
+        BeginAutoState(false);
+    }
+    BeforeStepForward();
+    if (Core.IsSuccess()){
+        OnSuccess();
+    }
+    if (Core.IsAutoTotallyFailed()){
+        OnFail();
+    }
+    if (Core.IsFail()){
+        Core.TryReduceQueenChess_Auto();
+    }
+    else{
+        Core.TryAddQueenChess_Auto();
+    }
+}
+
+void EightQueenWindow::StepBack(){
 
 }
 
+void EightQueenWindow::BeforeStepForward(){
+    QElapsedTimer RecoverTimer;
+    ViewMap();
+    RecoverTimer.start();
+    while (RecoverTimer.elapsed() < AutoViewMapTime){
+        QCoreApplication::processEvents();
+    }
+    RecoverMap();
+}
+
 void EightQueenWindow::OnSuccess(){
+    if (bAutoState){
+        if (bAutoPlay){
+            AutoPause();
+        }
+    }
 
 }
 
 void EightQueenWindow::OnFail(){
+    if (bAutoState){
+        if (bAutoPlay){
+            AutoPause();
+        }
+    }
 
 }
 
-void EightQueenWindow::BeginAutoState(){
-    if (bAutoState){
+void EightQueenWindow::BeginAutoState(bool bAutoPlay){
+    if (bAutoState || bAutoPlay){
         return;
     }
     bAutoState = true;
-    AutoPlay();
+    Core.InitializeAutoState();
+    if (bAutoPlay){
+        AutoPlay();
+    }
 }
 
 void EightQueenWindow::AutoPlay(){
@@ -278,7 +324,7 @@ void EightQueenWindow::AutoPlay(){
 }
 
 void EightQueenWindow::AutoStepForward(){
-
+    StepForward();
 }
 
 void EightQueenWindow::AutoPause(){
@@ -293,6 +339,13 @@ void EightQueenWindow::AutoPause(){
 }
 
 void EightQueenWindow::EndAutoState(){
-
+    if (!bAutoState){
+        return;
+    }
+    if (bAutoPlay){
+        AutoPause();
+    }
+    bAutoState = false;
+    Core.ClearAutoState();
 }
 

@@ -47,10 +47,12 @@ private:
     void ViewMap();
     void RecoverMap();
     void StepForward();
+    void StepBack();
+    void BeforeStepForward();
     void OnSuccess();
     void OnFail();
 
-    void BeginAutoState();
+    void BeginAutoState(bool bAutoPlay);
     void AutoPlay();
     void AutoStepForward();
     void AutoPause();
@@ -59,8 +61,9 @@ private:
     Ui::EightQueenWindow *ui;
 
     const static uint8_t MapSize;
-    const static int32_t AddChessFailWarningTime;
-    const static int32_t AutoPlaySpaceTime;
+    const static int64_t AddChessFailWarningTime;
+    const static int64_t AutoPlaySpaceTime;
+    const static int64_t AutoViewMapTime;
 
     EightQueen Core;
 

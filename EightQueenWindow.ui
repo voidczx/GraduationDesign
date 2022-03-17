@@ -506,13 +506,52 @@
    <property name="geometry">
     <rect>
      <x>100</x>
-     <y>560</y>
+     <y>360</y>
      <width>171</width>
      <height>51</height>
     </rect>
    </property>
    <property name="text">
     <string>View Map</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="Button_AutoStop">
+   <property name="geometry">
+    <rect>
+     <x>90</x>
+     <y>630</y>
+     <width>51</width>
+     <height>51</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Stop</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="Button_AutoPlayPause">
+   <property name="geometry">
+    <rect>
+     <x>160</x>
+     <y>630</y>
+     <width>51</width>
+     <height>51</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>PushButton</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="Button_AutoStepForward">
+   <property name="geometry">
+    <rect>
+     <x>230</x>
+     <y>630</y>
+     <width>51</width>
+     <height>51</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Forward</string>
    </property>
   </widget>
  </widget>
