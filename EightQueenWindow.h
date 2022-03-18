@@ -34,6 +34,9 @@ private slots:
     void RemoveChessButtonClicked();
     void ViewMapButtonPressed();
     void ViewMapButtonReleased();
+    void AutoPlayPauseButtonClicked();
+    void AutoStopButtonClicked();
+    void AutoStepForwardClicked();
 
     void CloseSelf();
 
@@ -44,6 +47,9 @@ private:
 
     void TryAddChess(const uint8_t& Row, const uint8_t& Col);
     void TryRemoveChess();
+    void AfterAddChessSuccess(const uint8_t& Row, const uint8_t& Col);
+    void AfterAddChessFail(const uint8_t& Row, const uint8_t& Col);
+    void AfterReduceChess();
     void ViewMap();
     void RecoverMap();
     void StepForward();

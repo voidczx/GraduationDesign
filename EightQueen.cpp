@@ -20,18 +20,19 @@ bool EightQueen::TryAddQueenChess_Manually(const uint8_t& Row, const uint8_t& Co
     return TryAddQueenChess(Row, Col);
 }
 
-bool EightQueen::TryAddQueenChess_Auto(){
+bool EightQueen::TryAddQueenChess_Auto(uint8_t& OutRow, uint8_t& OutCol){
     for (uint8_t Row = 0; Row < MapSize; Row++){
-        if (AutoMap[Row] > 0){
-            const uint8_t Col = AutoMap[Row];
+        if (AutoMap[Row] < MapSize){
+            uint8_t Col = AutoMap[Row];
             if (TryAddQueenChess(Row, Col)){
-                AutoChessStack.push_back(Row * MapSize + Col);
-                AutoMap[Row] = -1;
-                ProcessStack.push_back(AutoProcess::Add);
-                return true;
+                    OutRow = Row;
+                    OutCol = Col;
+                    AutoChessStack.push_back(Row * MapSize + Col);
+                    RefreshAutoMap();
+                    ProcessStack.push_back(AutoProcess::Add);
+                    return true;
             }
             else{
-                // Something Wrong
                 return false;
             }
         }
@@ -49,15 +50,21 @@ bool EightQueen::TryReduceQueenChess_Auto(){
         return false;
     }
     const int32_t RemoveIndex = AutoChessStack.back();
-    const uint8_t Row = RemoveIndex / MapSize;
-    const uint8_t Col = RemoveIndex % MapSize;
+    uint8_t Row = RemoveIndex / MapSize;
+    uint8_t Col = RemoveIndex % MapSize;
     if (TryReduceQueenChess()){
         AutoChessStack.pop_back();
-        AutoMap[Row] = -1;
-        while (Col < MapSize){
+        LastAutoReduceUnit = MapUnit(Row, Col);
+        RefreshAutoMap();
+        AutoMap[Row] = MapSize;
+        while (++Col < MapSize){
             if (Map[Row][Col]){
                 AutoMap[Row] = Col;
+                break;
             }
+        }
+        if (AutoMap[Row] >= MapSize){
+            bAutoFail = true;
         }
         ProcessStack.push_back(AutoProcess::Reduce);
         return true;
@@ -75,7 +82,7 @@ void EightQueen::InitializeAutoState(){
         return;
     }
     for (int Row = 0; Row < MapSize; Row++){
-        uint8_t Index = -1;
+        uint8_t Index = MapSize;
         for (int Col = 0; Col < MapSize; Col++){
             if (Map[Row][Col]){
                 Index = Col;
@@ -84,11 +91,25 @@ void EightQueen::InitializeAutoState(){
         }
         AutoMap.emplace(Row, Index);
     }
+    bAutoFail = false;
 }
 
 void EightQueen::ClearAutoState(){
     AutoMap.clear();
     AutoChessStack.clear();
+    bAutoFail = false;
+}
+
+void EightQueen::RefreshAutoMap(){
+    for (int Row = 0; Row < MapSize; Row++){
+        AutoMap[Row] = MapSize;
+        for (int Col = 0; Col < MapSize; Col++){
+            if (Map[Row][Col]){
+                AutoMap[Row] = Col;
+                break;
+            }
+        }
+    }
 }
 
 void EightQueen::StepBack_Auto(){
@@ -114,6 +135,9 @@ bool EightQueen::TryReduceQueenChess(){
     }
     if (bFail){
         bFail = false;
+    }
+    if (bAutoFail){
+        bAutoFail = false;
     }
     BeforeReduceQueenChess();
     ChessArray.pop_back();

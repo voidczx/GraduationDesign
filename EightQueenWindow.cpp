@@ -8,10 +8,11 @@
 #include "qsequentialanimationgroup.h"
 #include "QElapsedTimer"
 #include "QGraphicsOpacityEffect"
+#include "QMessageBox"
 
 const uint8_t EightQueenWindow::MapSize = 8;
 const int64_t EightQueenWindow::AddChessFailWarningTime = 500;
-const int64_t EightQueenWindow::AutoPlaySpaceTime = 500;
+const int64_t EightQueenWindow::AutoPlaySpaceTime = 1500;
 const int64_t EightQueenWindow::AutoViewMapTime = 500;
 
 EightQueenWindow::EightQueenWindow(QWidget *parent) :
@@ -40,6 +41,9 @@ bool EightQueenWindow::eventFilter(QObject *watched, QEvent *event){
                         int Index = ui->GridLayout_EightQueen->indexOf(EventLabel);
                         uint8_t Row = Index / MapSize;
                         uint8_t Col = Index % MapSize;
+                        if (bAutoState){
+                            EndAutoState();
+                        }
                         TryAddChess(Row, Col);
                     }
                     return true;
@@ -52,19 +56,56 @@ bool EightQueenWindow::eventFilter(QObject *watched, QEvent *event){
 }
 
 void EightQueenWindow::BackButtonClicked(){
+    if (bAutoState){
+        EndAutoState();
+    }
     emit(OnBackButtonClicked());
 }
 
 void EightQueenWindow::RemoveChessButtonClicked(){
+    if (bAutoState){
+        EndAutoState();
+    }
     TryRemoveChess();
 }
 
 void EightQueenWindow::ViewMapButtonPressed(){
+    if (bAutoPlay){
+        AutoPause();
+    }
     ViewMap();
 }
 
 void EightQueenWindow::ViewMapButtonReleased(){
+    if (bAutoPlay){
+        AutoPause();
+    }
     RecoverMap();
+}
+
+void EightQueenWindow::AutoPlayPauseButtonClicked(){
+    if (bAutoState){
+        if (bAutoPlay){
+            AutoPause();
+        }
+        else{
+            AutoPlay();
+        }
+    }
+    else{
+        BeginAutoState(true);
+    }
+}
+
+void EightQueenWindow::AutoStopButtonClicked(){
+    EndAutoState();
+}
+
+void EightQueenWindow::AutoStepForwardClicked(){
+    if (bAutoPlay){
+        AutoPause();
+    }
+    StepForward();
 }
 
 void EightQueenWindow::CloseSelf(){
@@ -78,6 +119,9 @@ void EightQueenWindow::InitializeConnection(){
     connect(this->ui->Button_RemoveChess, SIGNAL(clicked(bool)), this, SLOT(RemoveChessButtonClicked()));
     connect(this->ui->Button_ViewMap, SIGNAL(pressed()), this, SLOT(ViewMapButtonPressed()));
     connect(this->ui->Button_ViewMap, SIGNAL(released()), this, SLOT(ViewMapButtonReleased()));
+    connect(this->ui->Button_AutoPlayPause, SIGNAL(clicked(bool)), this, SLOT(AutoPlayPauseButtonClicked()));
+    connect(this->ui->Button_AutoStop, SIGNAL(clicked(bool)), this, SLOT(AutoStopButtonClicked()));
+    connect(this->ui->Button_AutoStepForward, SIGNAL(clicked(bool)), this, SLOT(AutoStepForwardClicked()));
 }
 
 void EightQueenWindow::InitializeMap(){
@@ -109,25 +153,7 @@ void EightQueenWindow::InitializeMap(){
 void EightQueenWindow::TryAddChess(const uint8_t& Row, const uint8_t& Col){
     if (Core.TryAddQueenChess_Manually(Row, Col)){
         qDebug() << "Add Success At " << Row << ", " << Col;
-        if (ui->GridLayout_EightQueen != nullptr){
-            QLayoutItem* UnitItem = ui->GridLayout_EightQueen->itemAtPosition(Row, Col);
-            if (UnitItem != nullptr){
-                QLabel* UnitLabel = qobject_cast<QLabel*>(UnitItem->widget());
-                if (UnitLabel != nullptr){
-                    QLabel* NewChessLabel = new QLabel(ui->layoutWidget);
-                    NewChessLabel->setGeometry(UnitLabel->pos().x(),
-                                          UnitLabel->pos().y(),
-                                          UnitLabel->geometry().width(),
-                                          UnitLabel->geometry().height());
-                    QPixmap QueenChessPixmap(QString(":/EightQueen/QueenChess.jpg"));
-                    QueenChessPixmap.scaled(NewChessLabel->size());
-                    NewChessLabel->setScaledContents(true);
-                    NewChessLabel->setPixmap(QueenChessPixmap);
-                    NewChessLabel->show();
-                    ChessStack.push(NewChessLabel);
-                }
-            }
-        }
+        AfterAddChessSuccess(Row, Col);
         if (Core.IsSuccess()){
             OnSuccess();
         }
@@ -137,77 +163,107 @@ void EightQueenWindow::TryAddChess(const uint8_t& Row, const uint8_t& Col){
     }
     else{
         qDebug() << "Add Fail At " << Row << ", " << Col;
-        if (ui->GridLayout_EightQueen != nullptr){
-            QLayoutItem* UnitItem = ui->GridLayout_EightQueen->itemAtPosition(Row, Col);
-            if (UnitItem != nullptr){
-                QLabel* RedLabel = qobject_cast<QLabel*>(UnitItem->widget());
-                if (RedLabel != nullptr){
-                    RedLabel->setStyleSheet("QLabel{background:#ff0000;}");
-                    QElapsedTimer RecoverTimer;
-                    RecoverTimer.start();
-                    while (RecoverTimer.elapsed() < AddChessFailWarningTime){
-                        QCoreApplication::processEvents();
-                    }
-                    const bool bBlack = ((Row & 1) ^ (Col & 1));
-                    if (bBlack){
-                        RedLabel->setStyleSheet(QString("QLabel{background:#000000;}"));
-                    }
-                    else{
-                        RedLabel->setStyleSheet(QString("QLabel{background:#ffffff;}"));
-                    }
+        AfterAddChessFail(Row, Col);
+    }
+}
+
+void EightQueenWindow::TryRemoveChess(){
+    if (Core.TryReduceQueenChess_Manually()){
+        AfterReduceChess();
+    }
+    else{
+        qDebug() << "Remove Chess Fail !!";
+    }
+}
+
+void EightQueenWindow::AfterAddChessSuccess(const uint8_t& Row, const uint8_t& Col){
+    if (ui->GridLayout_EightQueen != nullptr){
+        QLayoutItem* UnitItem = ui->GridLayout_EightQueen->itemAtPosition(Row, Col);
+        if (UnitItem != nullptr){
+            QLabel* UnitLabel = qobject_cast<QLabel*>(UnitItem->widget());
+            if (UnitLabel != nullptr){
+                QLabel* NewChessLabel = new QLabel(ui->layoutWidget);
+                NewChessLabel->setGeometry(UnitLabel->pos().x(),
+                                      UnitLabel->pos().y(),
+                                      UnitLabel->geometry().width(),
+                                      UnitLabel->geometry().height());
+                QPixmap QueenChessPixmap(QString(":/EightQueen/QueenChess.jpg"));
+                QueenChessPixmap.scaled(NewChessLabel->size());
+                NewChessLabel->setScaledContents(true);
+                NewChessLabel->setPixmap(QueenChessPixmap);
+                NewChessLabel->show();
+                ChessStack.push(NewChessLabel);
+            }
+        }
+    }
+}
+
+void EightQueenWindow::AfterAddChessFail(const uint8_t& Row, const uint8_t& Col){
+    if (ui->GridLayout_EightQueen != nullptr){
+        QLayoutItem* UnitItem = ui->GridLayout_EightQueen->itemAtPosition(Row, Col);
+        if (UnitItem != nullptr){
+            QLabel* RedLabel = qobject_cast<QLabel*>(UnitItem->widget());
+            if (RedLabel != nullptr){
+                RedLabel->setStyleSheet("QLabel{background:#ff0000;}");
+                QElapsedTimer RecoverTimer;
+                RecoverTimer.start();
+                while (RecoverTimer.elapsed() < AddChessFailWarningTime){
+                    QCoreApplication::processEvents();
+                }
+                const bool bBlack = ((Row & 1) ^ (Col & 1));
+                if (bBlack){
+                    RedLabel->setStyleSheet(QString("QLabel{background:#000000;}"));
+                }
+                else{
+                    RedLabel->setStyleSheet(QString("QLabel{background:#ffffff;}"));
                 }
             }
         }
     }
 }
 
-void EightQueenWindow::TryRemoveChess(){
-    if (Core.TryReduceQueenChess_Manually()){
-        QLabel* RemoveChess = ChessStack.top();
-        if (RemoveChess != nullptr){
-           const QRect& OriginalGeometry = RemoveChess->geometry();
-           const QRect MagnifyingGeometry = QRect(
-                       OriginalGeometry.x() - OriginalGeometry.width() * 0.2f / 2.0f,
-                       OriginalGeometry.y() - OriginalGeometry.height() * 0.2f / 2.0f,
-                       OriginalGeometry.width() * 1.2f,
-                       OriginalGeometry.height() * 1.2f);
-           const QRect ShrinkingGeometry = QRect(
-                       OriginalGeometry.x() + OriginalGeometry.width() * 0.2f / 2.0f,
-                       OriginalGeometry.y() + OriginalGeometry.height() * 0.2f / 2.0f,
-                       OriginalGeometry.width() * 0.8f,
-                       OriginalGeometry.height() * 0.8f);
-           QParallelAnimationGroup* ParallelGroup = new QParallelAnimationGroup(RemoveChess);
-           QSequentialAnimationGroup* ScaleGroup = new QSequentialAnimationGroup(RemoveChess);
-           QPropertyAnimation* MagnifyingAnimation = new QPropertyAnimation(RemoveChess, "geometry");
-           MagnifyingAnimation->setStartValue(OriginalGeometry);
-           MagnifyingAnimation->setEndValue(MagnifyingGeometry);
-           MagnifyingAnimation->setDuration(500);
-           ScaleGroup->addAnimation(MagnifyingAnimation);
-           QPropertyAnimation* ShrinkingAnimation = new QPropertyAnimation(RemoveChess, "geometry");
-           ShrinkingAnimation->setStartValue(MagnifyingGeometry);
-           ShrinkingAnimation->setEndValue(ShrinkingGeometry);
-           ShrinkingAnimation->setDuration(500);
-           ScaleGroup->addAnimation(ShrinkingAnimation);
-           ParallelGroup->addAnimation(ScaleGroup);
-           QGraphicsOpacityEffect* LabelOpacity = new QGraphicsOpacityEffect(RemoveChess);
-           LabelOpacity->setOpacity(1.0f);
-           RemoveChess->setGraphicsEffect(LabelOpacity);
-           if (LabelOpacity != nullptr){
-               QPropertyAnimation* OpacityGroup = new QPropertyAnimation(LabelOpacity, "opacity");
-               OpacityGroup->setStartValue(1.0f);
-               OpacityGroup->setEndValue(0.0f);
-               OpacityGroup->setDuration(1000);
-               ParallelGroup->addAnimation(OpacityGroup);
-           }
-           ParallelGroup->start(QAbstractAnimation::DeleteWhenStopped);
-           connect(ParallelGroup, &QAbstractAnimation::finished, [RemoveChess]{
-                RemoveChess->deleteLater();
-           });
-           ChessStack.pop();
-        }
-    }
-    else{
-        qDebug() << "Remove Chess Fail !!";
+void EightQueenWindow::AfterReduceChess(){
+    QLabel* RemoveChess = ChessStack.top();
+    if (RemoveChess != nullptr){
+       const QRect& OriginalGeometry = RemoveChess->geometry();
+       const QRect MagnifyingGeometry = QRect(
+                   OriginalGeometry.x() - OriginalGeometry.width() * 0.2f / 2.0f,
+                   OriginalGeometry.y() - OriginalGeometry.height() * 0.2f / 2.0f,
+                   OriginalGeometry.width() * 1.2f,
+                   OriginalGeometry.height() * 1.2f);
+       const QRect ShrinkingGeometry = QRect(
+                   OriginalGeometry.x() + OriginalGeometry.width() * 0.2f / 2.0f,
+                   OriginalGeometry.y() + OriginalGeometry.height() * 0.2f / 2.0f,
+                   OriginalGeometry.width() * 0.8f,
+                   OriginalGeometry.height() * 0.8f);
+       QParallelAnimationGroup* ParallelGroup = new QParallelAnimationGroup(RemoveChess);
+       QSequentialAnimationGroup* ScaleGroup = new QSequentialAnimationGroup(RemoveChess);
+       QPropertyAnimation* MagnifyingAnimation = new QPropertyAnimation(RemoveChess, "geometry");
+       MagnifyingAnimation->setStartValue(OriginalGeometry);
+       MagnifyingAnimation->setEndValue(MagnifyingGeometry);
+       MagnifyingAnimation->setDuration(500);
+       ScaleGroup->addAnimation(MagnifyingAnimation);
+       QPropertyAnimation* ShrinkingAnimation = new QPropertyAnimation(RemoveChess, "geometry");
+       ShrinkingAnimation->setStartValue(MagnifyingGeometry);
+       ShrinkingAnimation->setEndValue(ShrinkingGeometry);
+       ShrinkingAnimation->setDuration(500);
+       ScaleGroup->addAnimation(ShrinkingAnimation);
+       ParallelGroup->addAnimation(ScaleGroup);
+       QGraphicsOpacityEffect* LabelOpacity = new QGraphicsOpacityEffect(RemoveChess);
+       LabelOpacity->setOpacity(1.0f);
+       RemoveChess->setGraphicsEffect(LabelOpacity);
+       if (LabelOpacity != nullptr){
+           QPropertyAnimation* OpacityGroup = new QPropertyAnimation(LabelOpacity, "opacity");
+           OpacityGroup->setStartValue(1.0f);
+           OpacityGroup->setEndValue(0.0f);
+           OpacityGroup->setDuration(1000);
+           ParallelGroup->addAnimation(OpacityGroup);
+       }
+       ParallelGroup->start(QAbstractAnimation::DeleteWhenStopped);
+       connect(ParallelGroup, &QAbstractAnimation::finished, [RemoveChess]{
+            RemoveChess->deleteLater();
+       });
+       ChessStack.pop();
     }
 }
 
@@ -226,6 +282,25 @@ void EightQueenWindow::ViewMap(){
                             InvalidLabel->setStyleSheet("QLabel{background:#ff0000;}");
                             bool bIsBlack = ((Row & 1) ^ (Col & 1));
                             MemoryMap.insert(InvalidLabel, bIsBlack);
+                        }
+                    }
+                }
+            }
+            else{
+                if (bAutoState){
+                    if (Row == Core.GetLastAutoReduceUnit().Row){
+                        if (Col <= Core.GetLastAutoReduceUnit().Col){
+                            if (ui->GridLayout_EightQueen != nullptr){
+                                QLayoutItem* UnitItem = ui->GridLayout_EightQueen->itemAtPosition(Row, Col);
+                                if (UnitItem != nullptr){
+                                    QLabel* InvalidLabel = qobject_cast<QLabel*>(UnitItem->widget());
+                                    if (InvalidLabel != nullptr){
+                                        InvalidLabel->setStyleSheet("QLabel{background:#00ff00;}");
+                                        bool bIsBlack = ((Row & 1) ^ (Col & 1));
+                                        MemoryMap.insert(InvalidLabel, bIsBlack);
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -252,18 +327,28 @@ void EightQueenWindow::StepForward(){
     if (!bAutoState){
         BeginAutoState(false);
     }
-    BeforeStepForward();
+    if (Core.IsFail() || Core.IsAutoFailed()){
+        if (Core.TryReduceQueenChess_Auto()){
+            AfterReduceChess();
+        }
+    }
+    else{
+        uint8_t Row = MapSize;
+        uint8_t Col = MapSize;
+        if (Core.TryAddQueenChess_Auto(Row, Col)){
+            AfterAddChessSuccess(Row, Col);
+        }
+        else{
+            AfterAddChessFail(Row, Col);
+        }
+    }
     if (Core.IsSuccess()){
         OnSuccess();
+        return;
     }
     if (Core.IsAutoTotallyFailed()){
         OnFail();
-    }
-    if (Core.IsFail()){
-        Core.TryReduceQueenChess_Auto();
-    }
-    else{
-        Core.TryAddQueenChess_Auto();
+        return;
     }
 }
 
@@ -287,7 +372,7 @@ void EightQueenWindow::OnSuccess(){
             AutoPause();
         }
     }
-
+    QMessageBox::information(this, QString("Success"), QString("Success!"));
 }
 
 void EightQueenWindow::OnFail(){
@@ -296,16 +381,16 @@ void EightQueenWindow::OnFail(){
             AutoPause();
         }
     }
-
+    QMessageBox::information(this, QString("Fail"), QString("Fail!"));
 }
 
-void EightQueenWindow::BeginAutoState(bool bAutoPlay){
+void EightQueenWindow::BeginAutoState(bool bInAutoPlay){
     if (bAutoState || bAutoPlay){
         return;
     }
     bAutoState = true;
     Core.InitializeAutoState();
-    if (bAutoPlay){
+    if (bInAutoPlay){
         AutoPlay();
     }
 }
@@ -321,9 +406,18 @@ void EightQueenWindow::AutoPlay(){
         connect(AutoPlayerTimer, &QTimer::timeout, this, &EightQueenWindow::AutoStepForward);
     }
     AutoPlayerTimer->start();
+    if (ui->Button_AutoPlayPause != nullptr){
+        ui->Button_AutoPlayPause->setText("Pause");
+    }
 }
 
 void EightQueenWindow::AutoStepForward(){
+    BeforeStepForward();
+    QElapsedTimer SpaceTimer;
+    SpaceTimer.start();
+    while (SpaceTimer.elapsed() <= AutoViewMapTime){
+        QCoreApplication::processEvents();
+    }
     StepForward();
 }
 
@@ -336,6 +430,9 @@ void EightQueenWindow::AutoPause(){
         return;
     }
     AutoPlayerTimer->stop();
+    if (ui->Button_AutoPlayPause != nullptr){
+        ui->Button_AutoPlayPause->setText("Continue");
+    }
 }
 
 void EightQueenWindow::EndAutoState(){
@@ -347,5 +444,8 @@ void EightQueenWindow::EndAutoState(){
     }
     bAutoState = false;
     Core.ClearAutoState();
+    if (ui->Button_AutoPlayPause){
+        ui->Button_AutoPlayPause->setText("Play");
+    }
 }
 
