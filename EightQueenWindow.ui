@@ -518,7 +518,7 @@
   <widget class="QPushButton" name="Button_AutoStop">
    <property name="geometry">
     <rect>
-     <x>90</x>
+     <x>50</x>
      <y>630</y>
      <width>51</width>
      <height>51</height>
@@ -531,7 +531,7 @@
   <widget class="QPushButton" name="Button_AutoPlayPause">
    <property name="geometry">
     <rect>
-     <x>160</x>
+     <x>190</x>
      <y>630</y>
      <width>51</width>
      <height>51</height>
@@ -544,7 +544,7 @@
   <widget class="QPushButton" name="Button_AutoStepForward">
    <property name="geometry">
     <rect>
-     <x>230</x>
+     <x>260</x>
      <y>630</y>
      <width>51</width>
      <height>51</height>
@@ -552,6 +552,19 @@
    </property>
    <property name="text">
     <string>Forward</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="Button_AutoStepBack">
+   <property name="geometry">
+    <rect>
+     <x>120</x>
+     <y>630</y>
+     <width>51</width>
+     <height>51</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>StepBack</string>
    </property>
   </widget>
  </widget>

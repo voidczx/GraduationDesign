@@ -37,6 +37,7 @@ private slots:
     void AutoPlayPauseButtonClicked();
     void AutoStopButtonClicked();
     void AutoStepForwardClicked();
+    void AutoStepBackClicked();
 
     void CloseSelf();
 

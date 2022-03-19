@@ -6,30 +6,42 @@
 #include "stdint.h"
 #include "unordered_map"
 
-struct MapUnit{
-
-    MapUnit() : Row(255), Col(255) {};
-    MapUnit(const uint8_t& InRow, const uint8_t& InCol) : Row(InRow), Col(InCol) {};
-
-    uint8_t Row;
-    uint8_t Col;
-};
-
-struct QueenChess{
-
-    QueenChess() : Row(0), Col(0) {};
-    QueenChess(const uint8_t& InRow, const uint8_t& InCol) : Row(InRow), Col(InCol) {};
-
-    uint8_t Row;
-    uint8_t Col;
-    std::vector<MapUnit> EffectUnitArray;
-};
-
 class EightQueen{
 
-    enum AutoProcess{
-        Add = 0,
-        Reduce = 1,
+public:
+
+    enum ProcessType{
+        ENone = 0,
+        EAdd = 1,
+        EReduce = 2,
+    };
+
+    struct Process{
+        Process() : Type(ProcessType::ENone){}
+        Process(const ProcessType& InType) : Type(InType){}
+
+        ProcessType Type;
+        int32_t OptionalInt1 = -1;
+        int32_t OptionalInt2 = -1;
+    };
+
+    struct MapUnit{
+
+        MapUnit() : Row(255), Col(255) {};
+        MapUnit(const uint8_t& InRow, const uint8_t& InCol) : Row(InRow), Col(InCol) {};
+
+        uint8_t Row;
+        uint8_t Col;
+    };
+
+    struct QueenChess{
+
+        QueenChess() : Row(0), Col(0) {};
+        QueenChess(const uint8_t& InRow, const uint8_t& InCol) : Row(InRow), Col(InCol) {};
+
+        uint8_t Row;
+        uint8_t Col;
+        std::vector<MapUnit> EffectUnitArray;
     };
 
 public:
@@ -45,7 +57,7 @@ public:
     void InitializeAutoState();
     void ClearAutoState();
     void RefreshAutoMap();
-    void StepBack_Auto();
+    Process StepBack_Auto();
 
     bool IsSuccess() const { return bSuccess; }
     bool IsFail() const { return bFail; }
@@ -67,7 +79,7 @@ private:
     std::unordered_map<uint8_t, uint8_t> AutoMap;
     std::deque<int32_t> AutoChessStack;
     MapUnit LastAutoReduceUnit;
-    std::deque<AutoProcess> ProcessStack;
+    std::deque<Process> ProcessStack;
 
     const uint8_t MapSize;
     bool bSuccess = false;

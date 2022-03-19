@@ -23,13 +23,14 @@ bool EightQueen::TryAddQueenChess_Manually(const uint8_t& Row, const uint8_t& Co
 bool EightQueen::TryAddQueenChess_Auto(uint8_t& OutRow, uint8_t& OutCol){
     for (uint8_t Row = 0; Row < MapSize; Row++){
         if (AutoMap[Row] < MapSize){
-            uint8_t Col = AutoMap[Row];
+            const uint8_t Col = AutoMap[Row];
             if (TryAddQueenChess(Row, Col)){
                     OutRow = Row;
                     OutCol = Col;
                     AutoChessStack.push_back(Row * MapSize + Col);
                     RefreshAutoMap();
-                    ProcessStack.push_back(AutoProcess::Add);
+                    Process AddProcess(ProcessType::EAdd);
+                    ProcessStack.push_back(AddProcess);
                     return true;
             }
             else{
@@ -49,24 +50,33 @@ bool EightQueen::TryReduceQueenChess_Auto(){
     if (AutoChessStack.empty()){
         return false;
     }
-    const int32_t RemoveIndex = AutoChessStack.back();
-    uint8_t Row = RemoveIndex / MapSize;
-    uint8_t Col = RemoveIndex % MapSize;
+    const int32_t ReduceIndex = AutoChessStack.back();
+    const uint8_t Row = ReduceIndex / MapSize;
+    const uint8_t Col = ReduceIndex % MapSize;
     if (TryReduceQueenChess()){
         AutoChessStack.pop_back();
-        LastAutoReduceUnit = MapUnit(Row, Col);
         RefreshAutoMap();
         AutoMap[Row] = MapSize;
-        while (++Col < MapSize){
-            if (Map[Row][Col]){
-                AutoMap[Row] = Col;
+        uint8_t NextCol = Col;
+        while (++NextCol < MapSize){
+            if (Map[Row][NextCol]){
+                AutoMap[Row] = NextCol;
                 break;
             }
         }
         if (AutoMap[Row] >= MapSize){
             bAutoFail = true;
         }
-        ProcessStack.push_back(AutoProcess::Reduce);
+        Process ReduceProcess(ProcessType::EReduce);
+        ReduceProcess.OptionalInt1 = ReduceIndex;
+        if (LastAutoReduceUnit.Row >= 255 || LastAutoReduceUnit.Col >= 255){
+            ReduceProcess.OptionalInt2 = -1;
+        }
+        else{
+            ReduceProcess.OptionalInt2 = LastAutoReduceUnit.Row * MapSize + LastAutoReduceUnit.Col;
+        }
+        LastAutoReduceUnit = MapUnit(Row, Col);
+        ProcessStack.push_back(ReduceProcess);
         return true;
     }
     return false;
@@ -112,8 +122,51 @@ void EightQueen::RefreshAutoMap(){
     }
 }
 
-void EightQueen::StepBack_Auto(){
+EightQueen::Process EightQueen::StepBack_Auto(){
+    if (ProcessStack.empty()){
+        return Process();
+    }
+    Process LastProcess = ProcessStack.back();
+    if (LastProcess.Type == ProcessType::EAdd){
+        const int32_t LastAddIndex = AutoChessStack.back();
+        const uint8_t LastAddRow = LastAddIndex / MapSize;
+        const uint8_t LastAddCol = LastAddIndex % MapSize;
+        if (TryReduceQueenChess()){
+            if (bAutoFail){
+                bAutoFail = false;
+            }
+            AutoChessStack.pop_back();
+            RefreshAutoMap();
+            AutoMap[LastAddRow] = LastAddCol;
+            ProcessStack.pop_back();
+            Process ShowProcess(ProcessType::EReduce);
+            return ShowProcess;
+        }
+    }
+    else if (LastProcess.Type == ProcessType::EReduce){
+        const int32_t LastReduceIndex = LastProcess.OptionalInt1;
+        const uint8_t LastReduceRow = LastReduceIndex / MapSize;
+        const uint8_t LastReduceCol = LastReduceIndex % MapSize;
+        if (TryAddQueenChess(LastReduceRow, LastReduceCol)){
+            bAutoFail = true;
+            AutoChessStack.push_back(LastReduceIndex);
+            RefreshAutoMap();
+            if (LastProcess.OptionalInt2 > 0){
+                LastAutoReduceUnit = MapUnit(LastProcess.OptionalInt2 / MapSize, LastProcess.OptionalInt2 % MapSize);
+            }
+            else{
+                LastAutoReduceUnit = MapUnit();
+            }
+            ProcessStack.pop_back();
+            Process ShowProcess(ProcessType::EAdd);
+            ShowProcess.OptionalInt1 = LastReduceIndex;
+            return ShowProcess;
+        }
+    }
+    else{
 
+    }
+    return Process();
 }
 
 bool EightQueen::TryAddQueenChess(const uint8_t& Row, const uint8_t& Col){

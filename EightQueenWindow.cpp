@@ -102,10 +102,23 @@ void EightQueenWindow::AutoStopButtonClicked(){
 }
 
 void EightQueenWindow::AutoStepForwardClicked(){
+    if (!bAutoState){
+        BeginAutoState(false);
+    }
     if (bAutoPlay){
         AutoPause();
     }
     StepForward();
+}
+
+void EightQueenWindow::AutoStepBackClicked(){
+    if (!bAutoState){
+        return;
+    }
+    if (bAutoPlay){
+        AutoPause();
+    }
+    StepBack();
 }
 
 void EightQueenWindow::CloseSelf(){
@@ -122,6 +135,7 @@ void EightQueenWindow::InitializeConnection(){
     connect(this->ui->Button_AutoPlayPause, SIGNAL(clicked(bool)), this, SLOT(AutoPlayPauseButtonClicked()));
     connect(this->ui->Button_AutoStop, SIGNAL(clicked(bool)), this, SLOT(AutoStopButtonClicked()));
     connect(this->ui->Button_AutoStepForward, SIGNAL(clicked(bool)), this, SLOT(AutoStepForwardClicked()));
+    connect(this->ui->Button_AutoStepBack, SIGNAL(clicked(bool)), this, SLOT(AutoStepBackClicked()));
 }
 
 void EightQueenWindow::InitializeMap(){
@@ -325,7 +339,7 @@ void EightQueenWindow::RecoverMap(){
 
 void EightQueenWindow::StepForward(){
     if (!bAutoState){
-        BeginAutoState(false);
+        return;
     }
     if (Core.IsFail() || Core.IsAutoFailed()){
         if (Core.TryReduceQueenChess_Auto()){
@@ -353,7 +367,13 @@ void EightQueenWindow::StepForward(){
 }
 
 void EightQueenWindow::StepBack(){
-
+    EightQueen::Process ShowProcess = Core.StepBack_Auto();
+    if (ShowProcess.Type == EightQueen::ProcessType::EAdd){
+        AfterAddChessSuccess(ShowProcess.OptionalInt1 / MapSize, ShowProcess.OptionalInt1 % MapSize);
+    }
+    else if (ShowProcess.Type == EightQueen::ProcessType::EReduce){
+        AfterReduceChess();
+    }
 }
 
 void EightQueenWindow::BeforeStepForward(){
