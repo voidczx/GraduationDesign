@@ -2,6 +2,7 @@
 #include "ui_mainwindow.h"
 #include "MazeWindow.h"
 #include "EightQueenWindow.h"
+#include "HuffmanEncodingWindow.h"
 
 #include "QDebug"
 
@@ -23,6 +24,8 @@ void MainWindow::InitializeConnection(){
     connect(this, SIGNAL(OnMazeButtonClick()), this, SLOT(OpenMazeUI()));
     connect(ui->Button_EightQueen, SIGNAL(clicked(bool)), this, SLOT(EightQueenButtonClick()));
     connect(this, SIGNAL(OnEightQueenButtonClick()), this, SLOT(OpenEightQueenUI()));
+    connect(ui->Button_Huffman, SIGNAL(clicked(bool)), this, SLOT(HuffmanEncodingButtonClick()));
+    connect(this, SIGNAL(OnHuffmanEncodingButtonClick()), this, SLOT(OpenHuffmanEncodingUI()));
 }
 
 void MainWindow::MazeButtonClick(){
@@ -31,6 +34,10 @@ void MainWindow::MazeButtonClick(){
 
 void MainWindow::EightQueenButtonClick(){
     emit(OnEightQueenButtonClick());
+}
+
+void MainWindow::HuffmanEncodingButtonClick(){
+    emit(OnHuffmanEncodingButtonClick());
 }
 
 void MainWindow::ShowMainWindow(){
@@ -52,6 +59,15 @@ void MainWindow::OpenEightQueenUI(){
         this->setVisible(false);
         connect(EightQueenUI, SIGNAL(OnBackButtonClicked()), this, SLOT(ShowMainWindow()));
         EightQueenUI->show();
+    }
+}
+
+void MainWindow::OpenHuffmanEncodingUI(){
+    HuffmanEncodingWindow* HuffmanEncodingUI = new HuffmanEncodingWindow();
+    if (HuffmanEncodingUI != nullptr){
+        this->setVisible(false);
+        connect(HuffmanEncodingUI, SIGNAL(OnBackButtonClicked()), this, SLOT(ShowMainWindow()));
+        HuffmanEncodingUI->show();
     }
 }
 

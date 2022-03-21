@@ -23,6 +23,7 @@ signals:
 
     void OnMazeButtonClick();
     void OnEightQueenButtonClick();
+    void OnHuffmanEncodingButtonClick();
 
 private:
     Ui::MainWindow *ui;
@@ -31,9 +32,11 @@ private slots:
 
     void MazeButtonClick();
     void EightQueenButtonClick();
+    void HuffmanEncodingButtonClick();
 
     void OpenMazeUI();
     void OpenEightQueenUI();
+    void OpenHuffmanEncodingUI();
     void ShowMainWindow();
 
 };
