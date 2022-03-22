@@ -11,6 +11,7 @@ CONFIG += c++11
 SOURCES += \
     EightQueen.cpp \
     EightQueenWindow.cpp \
+    HuffmanEncoding.cpp \
     HuffmanEncodingWindow.cpp \
     MazeWindow.cpp \
     main.cpp \
@@ -19,6 +20,7 @@ SOURCES += \
 HEADERS += \
     EightQueen.h \
     EightQueenWindow.h \
+    HuffmanEncoding.h \
     HuffmanEncodingWindow.h \
     MazeWindow.h \
     mainwindow.h

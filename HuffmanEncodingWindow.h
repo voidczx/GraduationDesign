@@ -2,6 +2,7 @@
 #define HUFFMANENCODINGWINDOW_H
 
 #include <QWidget>
+#include "HuffmanEncoding.h"
 
 namespace Ui {
 class HuffmanEncodingWindow;
@@ -30,6 +31,8 @@ private:
     void InitializeConnection();
 
     Ui::HuffmanEncodingWindow *ui;
+    HuffmanEncoding Core;
+
 };
 
 #endif // HUFFMANENCODINGWINDOW_H
