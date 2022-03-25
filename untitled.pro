@@ -12,6 +12,7 @@ SOURCES += \
     EightQueen.cpp \
     EightQueenWindow.cpp \
     HuffmanEncoding.cpp \
+    HuffmanEncodingViewWidget.cpp \
     HuffmanEncodingWindow.cpp \
     MazeWindow.cpp \
     main.cpp \
@@ -21,12 +22,14 @@ HEADERS += \
     EightQueen.h \
     EightQueenWindow.h \
     HuffmanEncoding.h \
+    HuffmanEncodingViewWidget.h \
     HuffmanEncodingWindow.h \
     MazeWindow.h \
     mainwindow.h
 
 FORMS += \
     EightQueenWindow.ui \
+    HuffmanEncodingViewWidget.ui \
     HuffmanEncodingWindow.ui \
     MazeWindow.ui \
     mainwindow.ui
