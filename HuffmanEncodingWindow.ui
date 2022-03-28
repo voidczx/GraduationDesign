@@ -121,7 +121,7 @@ p, li { white-space: pre-wrap; }
     </rect>
    </property>
    <property name="widgetResizable">
-    <bool>true</bool>
+    <bool>false</bool>
    </property>
    <widget class="HuffmanEncodingViewWidget" name="Content_Huffman">
     <property name="geometry">

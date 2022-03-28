@@ -83,6 +83,8 @@ public:
     bool IsBinaryBuildCompleted() const { return bBinaryBuildCompleted; }
     std::string GetEncodingResult(const std::string& InStr) { return EncodingMap.count(InStr) > 0 ? EncodingMap[InStr] : ""; }
 
+    void ClearAll();
+
     const std::unordered_map<char, int32_t> GenerateFrequencyMap(const std::string& InStr);
     const std::vector<std::shared_ptr<Process>> StepForward();
     const std::vector<std::shared_ptr<Process>> StepBack();

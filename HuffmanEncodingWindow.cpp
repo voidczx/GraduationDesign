@@ -1,6 +1,8 @@
 #include "HuffmanEncodingWindow.h"
 #include "ui_HuffmanEncodingWindow.h"
 
+#include "HuffmanEncodingViewWidget.h"
+
 #include "QTimer"
 #include "QPainter"
 
@@ -30,6 +32,18 @@ void HuffmanEncodingWindow::BackButtonClicked(){
 void HuffmanEncodingWindow::CloseSelf(){
     setAttribute(Qt::WA_DeleteOnClose, true);
     close();
+}
+
+void HuffmanEncodingWindow::InputWordsCompleted(){
+    if (ui->LineEdit_OriginWords->text() == InputLine){
+        return;
+    }
+    InputLine = ui->LineEdit_OriginWords->text();
+    if (bAutoState){
+        EndAutoState();
+    }
+    ClearAll();
+    GenerateFrequencyMap();
 }
 
 void HuffmanEncodingWindow::AutoStepForward(){
@@ -92,6 +106,7 @@ void HuffmanEncodingWindow::InitializeConnection(){
     connect(ui->Button_StepForward, SIGNAL(clicked(bool)), this, SLOT(AutoStepForwardButtonClicked()));
     connect(ui->Button_Back, SIGNAL(clicked(bool)), this, SLOT(AutoStepBackButtonClicked()));
     connect(ui->Button_Stop, SIGNAL(clicked(bool)), this, SLOT(AutoStopButtonClicked()));
+    connect(ui->LineEdit_OriginWords, SIGNAL(editingFinished()), this, SLOT(InputWordsCompleted()));
 }
 
 void HuffmanEncodingWindow::InitializeUI(){
@@ -100,6 +115,59 @@ void HuffmanEncodingWindow::InitializeUI(){
     }
     if (ui->ScrollArea_Huffman != nullptr){
         ui->ScrollArea_Huffman->viewport()->show();
+    }
+}
+
+void HuffmanEncodingWindow::ClearAll(){
+    if (ui->TableWidget_HuffmanFrequency != nullptr){
+        for (int Col = 0; Col < ui->TableWidget_HuffmanFrequency->columnCount(); Col++){
+            ui->TableWidget_HuffmanFrequency->removeColumn(0);
+        }
+    }
+    Core.ClearAll();
+    if (ui->Content_Huffman != nullptr){
+        ui->Content_Huffman->ClearAll();
+        ui->Content_Huffman->update();
+    }
+}
+
+void HuffmanEncodingWindow::GenerateFrequencyMap(){
+    if (ui->LineEdit_OriginWords == nullptr || ui->TableWidget_HuffmanFrequency == nullptr){
+        return;
+    }
+    std::unordered_map<char, int32_t> FrequencyMap = Core.GenerateFrequencyMap(ui->LineEdit_OriginWords->text().toStdString());
+    for (auto Iter = FrequencyMap.begin(); Iter != FrequencyMap.end(); Iter++){
+        AddFrequencyColumn(QString(Iter->first), Iter->second);
+    }
+}
+
+void HuffmanEncodingWindow::AddFrequencyColumn(const QString& InWord, const int32_t& InFrequency){
+    QString StrWord(InWord);
+    QString StrFrequency(QString::number(InFrequency));
+    QTableWidgetItem* WordItem = new QTableWidgetItem(StrWord);
+    QTableWidgetItem* FrequencyItem = new QTableWidgetItem(StrFrequency);
+    ui->TableWidget_HuffmanFrequency->insertColumn(0);
+    ui->TableWidget_HuffmanFrequency->setItem(0, 0, WordItem);
+    ui->TableWidget_HuffmanFrequency->setItem(1, 0, FrequencyItem);
+}
+
+void HuffmanEncodingWindow::RemoveFrequencyColumn(const QString& RemoveWord){
+    if (ui->TableWidget_HuffmanFrequency == nullptr){
+        return;
+    }
+    int32_t RemoveIndex = -1;
+    for (int32_t ColIndex = 0; ColIndex < ui->TableWidget_HuffmanFrequency->columnCount(); ColIndex++){
+        QTableWidgetItem* Item = ui->TableWidget_HuffmanFrequency->item(0, ColIndex);
+        if (Item != nullptr){
+            // qDebug() << " Row: 0" << " Col: " << ColIndex << " Text: " << Item->data(Qt::ItemDataRole::EditRole).toString();
+            if (Item->text() == RemoveWord){
+                RemoveIndex = ColIndex;
+                break;
+            }
+        }
+    }
+    if (RemoveIndex >= 0){
+        ui->TableWidget_HuffmanFrequency->removeColumn(RemoveIndex);
     }
 }
 
@@ -181,10 +249,54 @@ void HuffmanEncodingWindow::AutoPause(){
 
 void HuffmanEncodingWindow::StepForward(){
 
-    if (ui->Content_Huffman != nullptr){
-        ui->Content_Huffman->update();
+    std::vector<std::shared_ptr<HuffmanEncoding::Process>> StepForwardArray = Core.StepForward();
+    if (StepForwardArray.empty()){
+        return;
     }
+    if (StepForwardArray[0]->Class == HuffmanEncoding::ProcessClass::ETreeNode){
+        if (StepForwardArray.size() != 3){
+            return;
+        }
+        QString LeafNode01;
+        QString LeafNode02;
+        QString RootNode;
+        for (std::shared_ptr<HuffmanEncoding::Process> Process : StepForwardArray){
+            std::shared_ptr<HuffmanEncoding::TreeNodeProcess> TreeNodeProcess = std::static_pointer_cast<HuffmanEncoding::TreeNodeProcess>(Process);
+            if (TreeNodeProcess->Type == HuffmanEncoding::ProcessType::EAdd){
+                if (!RootNode.isEmpty()){
+                    return;
+                }
+                if (ui->TableWidget_HuffmanFrequency != nullptr){
+                    AddFrequencyColumn(QString(TreeNodeProcess->Str.c_str()), TreeNodeProcess->Frequency);
+                }
+                RootNode = QString(TreeNodeProcess->Str.c_str());
+            }
+            else if (TreeNodeProcess->Type == HuffmanEncoding::ProcessType::ERemove){
+                if (ui->TableWidget_HuffmanFrequency != nullptr){
+                    RemoveFrequencyColumn(QString(TreeNodeProcess->Str.c_str()));
+                    if (LeafNode01.isEmpty()){
+                        LeafNode01 = QString(TreeNodeProcess->Str.c_str());
+                    }
+                    else if (LeafNode02.isEmpty()){
+                        LeafNode02 = QString(TreeNodeProcess->Str.c_str());
+                    }
+                    else{
+                        return;
+                    }
+                }
+            }
+        }
+        if (ui->Content_Huffman != nullptr){
+            ui->Content_Huffman->AddNodes(RootNode, LeafNode01, LeafNode02);
+            ui->Content_Huffman->update();
+        }
+    }
+    else if (StepForwardArray[0]->Class == HuffmanEncoding::ProcessClass::EBinary){
 
+    }
+    else{
+
+    }
 }
 
 void HuffmanEncodingWindow::StepBack(){

@@ -15,6 +15,18 @@ HuffmanEncoding::~HuffmanEncoding(){
     TreeIter = nullptr;
 }
 
+void HuffmanEncoding::ClearAll(){
+    DeleteFrequencyList(Start);
+    Start = new FrequencyListNode();
+    DeleteHuffmanTree(Root);
+    Root = nullptr;
+    TreeIter = nullptr;
+    ProcessStack.clear();
+    EncodingMap.clear();
+    bTreeBuildCompleted = false;
+    bBinaryBuildCompleted = false;
+}
+
 const std::unordered_map<char, int32_t> HuffmanEncoding::GenerateFrequencyMap(const std::string& InStr){
 
     std::unordered_map<char, int32_t> Output;
@@ -43,6 +55,10 @@ const std::vector<std::shared_ptr<HuffmanEncoding::Process>> HuffmanEncoding::St
 
     if (!bTreeBuildCompleted){
         // Tree Node Process
+        if (Start->Next == nullptr){
+            return Output;
+        }
+
         FrequencyListNode* FirstNode = Start->Next;
         FrequencyListNode* SecondNode = FirstNode->Next;
         if (FirstNode == nullptr || SecondNode == nullptr){
@@ -54,15 +70,18 @@ const std::vector<std::shared_ptr<HuffmanEncoding::Process>> HuffmanEncoding::St
         std::string AddWord = FirstNode->Word + "/" + SecondNode->Word;
         int32_t AddValue = FirstNode->Value + SecondNode->Value;
         std::shared_ptr<TreeNodeProcess> AddNodeProcess(new TreeNodeProcess());
+        AddNodeProcess->Type = ProcessType::EAdd;
         AddNodeProcess->Str = AddWord;
         AddNodeProcess->Frequency = AddValue;
         Output.push_back(AddNodeProcess);
 
         // Remove Process
         std::shared_ptr<TreeNodeProcess> RemoveFirstNodeProcess(new TreeNodeProcess());
+        RemoveFirstNodeProcess->Type = ProcessType::ERemove;
         RemoveFirstNodeProcess->Str = FirstNode->Word;
         Output.push_back(RemoveFirstNodeProcess);
         std::shared_ptr<TreeNodeProcess> RemoveSecondNodeProcess(new TreeNodeProcess());
+        RemoveSecondNodeProcess->Type = ProcessType::ERemove;
         RemoveSecondNodeProcess->Str = SecondNode->Word;
         Output.push_back(RemoveSecondNodeProcess);
 

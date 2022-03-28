@@ -28,6 +28,8 @@ private slots:
 
     void CloseSelf();
 
+    void InputWordsCompleted();
+
     void AutoStepForward();
     void AutoPlayPauseButtonClicked();
     void AutoStopButtonClicked();
@@ -39,6 +41,11 @@ private:
     void InitializeConnection();
     void InitializeUI();
 
+    void ClearAll();
+
+    void GenerateFrequencyMap();
+    void AddFrequencyColumn(const QString& InWord, const int32_t& InFrequency);
+    void RemoveFrequencyColumn(const QString& RemoveWord);
     void StartAutoState(bool bInAutoPlay);
     void EndAutoState();
     void StartAutoPlay();
@@ -55,6 +62,7 @@ private:
     Ui::HuffmanEncodingWindow *ui;
     HuffmanEncoding Core;
     QTimer* AutoPlayerTimer = nullptr;
+    QString InputLine;
 
 };
 
