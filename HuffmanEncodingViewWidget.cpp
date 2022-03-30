@@ -23,7 +23,11 @@ HuffmanEncodingViewWidget::~HuffmanEncodingViewWidget()
 }
 
 void HuffmanEncodingViewWidget::ClearAll(){
-
+    SphereMap.clear();
+    LineMap.clear();
+    EdgeWordMap.clear();
+    EncodingResultMap.clear();
+    Start = QPoint(SphereRadius + WidgetMargin, SphereRadius + WidgetMargin);
 }
 
 void HuffmanEncodingViewWidget::AddNodes(const QString& RootNode, const QString& InLeaf01, const QString& InLeaf02){
@@ -71,7 +75,7 @@ void HuffmanEncodingViewWidget::AddNodes(const QString& RootNode, const QString&
         const int32_t RootX = (LeftPosition.x() + RightPosition.x()) / 2;
         const int32_t RootY = LeftPosition.y() + VerticalDistance;
         const QPoint RootPosition = QPoint(RootX, RootY);
-        Start = QPoint(Start.x() + RightPosition.x() + HorizontalDistance * 2, Start.y());
+        Start = QPoint(RightPosition.x() + HorizontalDistance * 2, Start.y());
         SphereMap.insert(InLeaf01, LeftPosition);
         SphereMap.insert(InLeaf02, RightPosition);
         SphereMap.insert(RootNode, RootPosition);
@@ -84,6 +88,17 @@ void HuffmanEncodingViewWidget::AddNodes(const QString& RootNode, const QString&
     }
 }
 
+void HuffmanEncodingViewWidget::AddEdgeWord(const QString& InLineWord, const QString& InLineValue){
+    EdgeWordMap.insert(InLineWord, InLineValue);
+}
+
+void HuffmanEncodingViewWidget::AddEncodingResult(const QString& InWord, const QString& InEncodingResult){
+    if (EncodingResultMap.contains(InWord)){
+        return;
+    }
+    EncodingResultMap.insert(InWord, InEncodingResult);
+}
+
 void HuffmanEncodingViewWidget::paintEvent(QPaintEvent *event){
     if (event == nullptr){
         return;
@@ -91,9 +106,45 @@ void HuffmanEncodingViewWidget::paintEvent(QPaintEvent *event){
     QPainter Painter(this);
     for (auto Iter = SphereMap.begin(); Iter != SphereMap.end(); Iter++){
         DrawSphere(Painter, Iter.value());
+        QPoint WordPos(Iter.value().x() + SphereRadius + WidgetMargin, Iter.value().y());
+        if (WordPos.x() + SphereRadius > this->width()){
+            this->resize(WordPos.x() + SphereRadius + WidgetMargin, this->height());
+        }
+        Painter.save();
+        Painter.setPen(QColor(180, 100, 0));
+        Painter.drawText(WordPos, Iter.key());
+        Painter.restore();
     }
     for (auto Iter = LineMap.begin(); Iter != LineMap.end(); Iter++){
         Painter.drawLine(Iter.value());
+    }
+    for (auto Iter = EdgeWordMap.begin(); Iter != EdgeWordMap.end(); Iter++){
+        if (!LineMap.contains(Iter.key())){
+            continue;
+        }
+        QLine WordLine = LineMap[Iter.key()];
+        QPoint WordPos = QPoint((WordLine.x1() + WordLine.x2()) / 2, (WordLine.y1() + WordLine.y2()) / 2);
+        if (WordPos.x() + SphereRadius > this->width()){
+            this->resize(WordPos.x() + SphereRadius + WidgetMargin, this->height());
+        }
+        Painter.save();
+        Painter.setPen(QColor(40, 195, 96));
+        Painter.drawText(WordPos, Iter.value());
+        Painter.restore();
+    }
+    for (auto Iter = EncodingResultMap.begin(); Iter != EncodingResultMap.end(); Iter++){
+        const QPoint SpherePos = SphereMap[Iter.key()];
+        const QPoint WordPos = QPoint(SpherePos.x(), SpherePos.y() + SphereRadius + WidgetMargin);
+        if (WordPos.x() + SphereRadius > this->width()){
+            this->resize(WordPos.x() + SphereRadius + WidgetMargin, this->height());
+        }
+        if (WordPos.y() + SphereRadius > this->height()){
+             this->resize(this->width(), WordPos.y() + SphereRadius + WidgetMargin);
+        }
+        Painter.save();
+        Painter.setPen(QColor(50, 45, 180));
+        Painter.drawText(WordPos, Iter.value());
+        Painter.restore();
     }
 }
 

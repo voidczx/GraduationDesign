@@ -1,5 +1,7 @@
 #include "HuffmanEncoding.h"
 
+#include "qdebug.h"
+
 HuffmanEncoding::HuffmanEncoding()
 {
     Start = new FrequencyListNode();
@@ -10,16 +12,34 @@ HuffmanEncoding::HuffmanEncoding()
 HuffmanEncoding::~HuffmanEncoding(){
     DeleteFrequencyList(Start);
     Start = nullptr;
-    DeleteHuffmanTree(Root);
-    Root = nullptr;
+    if (Root != nullptr){
+        DeleteHuffmanTree(Root);
+        Root = nullptr;
+    }
+    else{
+        for (auto Iter = TreeNodeMap.begin(); Iter != TreeNodeMap.end(); Iter++){
+            delete Iter->second;
+            Iter->second = nullptr;
+        }
+    }
+    TreeNodeMap.clear();
     TreeIter = nullptr;
 }
 
 void HuffmanEncoding::ClearAll(){
     DeleteFrequencyList(Start);
     Start = new FrequencyListNode();
-    DeleteHuffmanTree(Root);
-    Root = nullptr;
+    if (Root != nullptr){
+        DeleteHuffmanTree(Root);
+        Root = nullptr;
+    }
+    else{
+        for (auto Iter = TreeNodeMap.begin(); Iter != TreeNodeMap.end(); Iter++){
+            delete Iter->second;
+            Iter->second = nullptr;
+        }
+    }
+    TreeNodeMap.clear();
     TreeIter = nullptr;
     ProcessStack.clear();
     EncodingMap.clear();
@@ -42,6 +62,12 @@ const std::unordered_map<char, int32_t> HuffmanEncoding::GenerateFrequencyMap(co
         std::string Word = "";
         Word.push_back(Pair.first);
         AddFrequencyNode(Word, Pair.second);
+    }
+    Output.clear();
+    FrequencyListNode* FrequencyNode = Start->Next;
+    while (FrequencyNode != nullptr){
+        Output.emplace(FrequencyNode->Word[0], FrequencyNode->Value);
+        FrequencyNode = FrequencyNode->Next;
     }
     return Output;
 }
@@ -87,14 +113,31 @@ const std::vector<std::shared_ptr<HuffmanEncoding::Process>> HuffmanEncoding::St
 
         // Add Nodes
         AddFrequencyNode(AddWord, AddValue);
+        if (TreeNodeMap.count(AddWord) > 0){
+            qDebug() << "Error: TreeNodeMap has AddWord " << AddWord.c_str();
+        }
         HuffmanTreeNode* Parent = new HuffmanTreeNode();
-        Root = Parent;
         Parent->Word = AddWord;
-        HuffmanTreeNode* LeftChild = new HuffmanTreeNode();
+        TreeNodeMap.emplace(AddWord, Parent);
+        HuffmanTreeNode* LeftChild = nullptr;
+        if (TreeNodeMap.count(FirstNode->Word) > 0){
+            LeftChild = TreeNodeMap[FirstNode->Word];
+        }
+        else{
+            LeftChild = new HuffmanTreeNode();
+            TreeNodeMap.emplace(FirstNode->Word, LeftChild);
+        }
         LeftChild->Word = FirstNode->Word;
         LeftChild->Parent = Parent;
         Parent->LeftChild = LeftChild;
-        HuffmanTreeNode* RightChild = new HuffmanTreeNode();
+        HuffmanTreeNode* RightChild = nullptr;
+        if (TreeNodeMap.count(SecondNode->Word) > 0){
+            RightChild = TreeNodeMap[SecondNode->Word];
+        }
+        else{
+            RightChild = new HuffmanTreeNode();
+            TreeNodeMap.emplace(SecondNode->Word, RightChild);
+        }
         RightChild->Word = SecondNode->Word;
         RightChild->Parent = Parent;
         Parent->RightChild = RightChild;
@@ -112,6 +155,7 @@ const std::vector<std::shared_ptr<HuffmanEncoding::Process>> HuffmanEncoding::St
         }
         if (Start->Next->Next == nullptr){
             bTreeBuildCompleted = true;
+            Root = Parent;
         }
     }
     else{
@@ -159,7 +203,7 @@ const std::vector<std::shared_ptr<HuffmanEncoding::Process>> HuffmanEncoding::St
         else{
             while (TreeIter->Parent != nullptr){
                 TreeIter = TreeIter->Parent;
-                if (TreeIter->EncodingResult == ""){
+                if (TreeIter->RightChild != nullptr && TreeIter->RightChild->EncodingResult == ""){
                     TreeIter = TreeIter->RightChild;
                     break;
                 }
@@ -171,6 +215,13 @@ const std::vector<std::shared_ptr<HuffmanEncoding::Process>> HuffmanEncoding::St
                 else{
                     bBinaryBuildCompleted = true;
                     TreeIter = nullptr;
+                }
+            }
+        }
+        if (bBinaryBuildCompleted){
+            for (auto Iter = TreeNodeMap.begin(); Iter != TreeNodeMap.end(); Iter++){
+                if (Iter->first.size() == 1){
+                    EncodingMap.emplace(Iter->first, Iter->second->EncodingResult);
                 }
             }
         }

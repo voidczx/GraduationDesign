@@ -103,6 +103,7 @@ private:
     HuffmanTreeNode* TreeIter;
     std::deque<std::vector<std::shared_ptr<Process>>> ProcessStack;
     std::unordered_map<std::string, std::string> EncodingMap;
+    std::unordered_map<std::string, HuffmanTreeNode*> TreeNodeMap;
     bool bTreeBuildCompleted = false;
     bool bBinaryBuildCompleted = false;
 

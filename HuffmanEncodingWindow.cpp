@@ -142,13 +142,28 @@ void HuffmanEncodingWindow::GenerateFrequencyMap(){
 }
 
 void HuffmanEncodingWindow::AddFrequencyColumn(const QString& InWord, const int32_t& InFrequency){
+    if (ui->TableWidget_HuffmanFrequency == nullptr){
+        return;
+    }
     QString StrWord(InWord);
     QString StrFrequency(QString::number(InFrequency));
     QTableWidgetItem* WordItem = new QTableWidgetItem(StrWord);
     QTableWidgetItem* FrequencyItem = new QTableWidgetItem(StrFrequency);
-    ui->TableWidget_HuffmanFrequency->insertColumn(0);
-    ui->TableWidget_HuffmanFrequency->setItem(0, 0, WordItem);
-    ui->TableWidget_HuffmanFrequency->setItem(1, 0, FrequencyItem);
+    int32_t Index = 0;
+    while (Index < ui->TableWidget_HuffmanFrequency->colorCount()){
+        QTableWidgetItem* TempFrequencyItem = ui->TableWidget_HuffmanFrequency->item(1, Index);
+        if (TempFrequencyItem == nullptr){
+            break;
+        }
+        int32_t TempFrequency = TempFrequencyItem->text().toInt();
+        if (TempFrequency >= InFrequency){
+            break;
+        }
+        Index++;
+    }
+    ui->TableWidget_HuffmanFrequency->insertColumn(Index);
+    ui->TableWidget_HuffmanFrequency->setItem(0, Index, WordItem);
+    ui->TableWidget_HuffmanFrequency->setItem(1, Index, FrequencyItem);
 }
 
 void HuffmanEncodingWindow::RemoveFrequencyColumn(const QString& RemoveWord){
@@ -168,6 +183,23 @@ void HuffmanEncodingWindow::RemoveFrequencyColumn(const QString& RemoveWord){
     }
     if (RemoveIndex >= 0){
         ui->TableWidget_HuffmanFrequency->removeColumn(RemoveIndex);
+    }
+}
+
+void HuffmanEncodingWindow::GeneratedEncodingResult(){
+
+    if (ui->LineEdit_OriginWords != nullptr && ui->TextBrowser_OutputWords != nullptr){
+        std::string EncodingResult = "";
+        for (char Ch : ui->LineEdit_OriginWords->text().toStdString()){
+            std::string StrCh = "";
+            StrCh += Ch;
+            std::string ChEncodingResult = Core.GetEncodingResult(StrCh);
+            if (ui->Content_Huffman != nullptr){
+                ui->Content_Huffman->AddEncodingResult(StrCh.c_str(), ChEncodingResult.c_str());
+            }
+            EncodingResult += ChEncodingResult;
+        }
+        ui->TextBrowser_OutputWords->setText(EncodingResult.c_str());
     }
 }
 
@@ -292,10 +324,23 @@ void HuffmanEncodingWindow::StepForward(){
         }
     }
     else if (StepForwardArray[0]->Class == HuffmanEncoding::ProcessClass::EBinary){
-
+        for (std::shared_ptr<HuffmanEncoding::Process> Process : StepForwardArray){
+            std::shared_ptr<HuffmanEncoding::BinaryProcess> BinaryProcess = std::static_pointer_cast<HuffmanEncoding::BinaryProcess>(Process);
+            if (BinaryProcess->Type == HuffmanEncoding::ProcessType::EAdd){
+                QString EdgeWord = QString(BinaryProcess->StrTarget.c_str());
+                QString EdgeValue = QString(BinaryProcess->Value.c_str());
+                if (ui->Content_Huffman != nullptr){
+                    ui->Content_Huffman->AddEdgeWord(EdgeWord, EdgeValue);
+                    ui->Content_Huffman->update();
+                }
+            }
+        }
     }
     else{
-
+        return;
+    }
+    if (Core.IsBinaryBuildCompleted()){
+        GeneratedEncodingResult();
     }
 }
 

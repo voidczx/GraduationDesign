@@ -46,6 +46,7 @@ private:
     void GenerateFrequencyMap();
     void AddFrequencyColumn(const QString& InWord, const int32_t& InFrequency);
     void RemoveFrequencyColumn(const QString& RemoveWord);
+    void GeneratedEncodingResult();
     void StartAutoState(bool bInAutoPlay);
     void EndAutoState();
     void StartAutoPlay();

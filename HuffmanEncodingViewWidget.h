@@ -19,6 +19,8 @@ public:
     void ClearAll();
 
     void AddNodes(const QString& RootNode, const QString& InLeaf01, const QString& InLeaf02);
+    void AddEdgeWord(const QString& InLineWord, const QString& InLineValue);
+    void AddEncodingResult(const QString& InWord, const QString& InEncodingResult);
 
 protected:
 
@@ -36,6 +38,8 @@ private:
     Ui::HuffmanEncodingViewWidget *ui;
     QMap<QString, QPoint> SphereMap;
     QMap<QString, QLine> LineMap;
+    QMap<QString, QString> EdgeWordMap;
+    QMap<QString, QString> EncodingResultMap;
     QPoint Start;
 };
 
