@@ -21,6 +21,9 @@ public:
     void AddNodes(const QString& RootNode, const QString& InLeaf01, const QString& InLeaf02);
     void AddEdgeWord(const QString& InLineWord, const QString& InLineValue);
     void AddEncodingResult(const QString& InWord, const QString& InEncodingResult);
+    void RemoveSphere(const QString& InWord);
+    void RemoveLine(const QString& InWord) { LineMap.remove(InWord); }
+    void RemoveEdgeWord(const QString& InWord) { EdgeWordMap.remove(InWord); }
 
 protected:
 

@@ -10,6 +10,8 @@ namespace Ui {
 class HuffmanEncodingWindow;
 }
 
+// TODO: 1. Reset window size when ClearAll() 2. Sign the node is left or right
+
 class HuffmanEncodingWindow : public QWidget
 {
     Q_OBJECT

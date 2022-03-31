@@ -5,6 +5,7 @@
 
 #include "QTimer"
 #include "QPainter"
+#include "QMessageBox"
 
 #include "qdebug.h"
 
@@ -104,7 +105,7 @@ void HuffmanEncodingWindow::InitializeConnection(){
     connect(this, SIGNAL(OnBackButtonClicked()), this, SLOT(CloseSelf()));
     connect(ui->Button_PlayPause, SIGNAL(clicked(bool)), this, SLOT(AutoPlayPauseButtonClicked()));
     connect(ui->Button_StepForward, SIGNAL(clicked(bool)), this, SLOT(AutoStepForwardButtonClicked()));
-    connect(ui->Button_Back, SIGNAL(clicked(bool)), this, SLOT(AutoStepBackButtonClicked()));
+    connect(ui->Button_StepBack, SIGNAL(clicked(bool)), this, SLOT(AutoStepBackButtonClicked()));
     connect(ui->Button_Stop, SIGNAL(clicked(bool)), this, SLOT(AutoStopButtonClicked()));
     connect(ui->LineEdit_OriginWords, SIGNAL(editingFinished()), this, SLOT(InputWordsCompleted()));
 }
@@ -128,6 +129,9 @@ void HuffmanEncodingWindow::ClearAll(){
     if (ui->Content_Huffman != nullptr){
         ui->Content_Huffman->ClearAll();
         ui->Content_Huffman->update();
+    }
+    if (ui->TextBrowser_OutputWords != nullptr){
+        ui->TextBrowser_OutputWords->clear();
     }
 }
 
@@ -341,10 +345,50 @@ void HuffmanEncodingWindow::StepForward(){
     }
     if (Core.IsBinaryBuildCompleted()){
         GeneratedEncodingResult();
+        QMessageBox::information(this, QString("Complete"), QString("Complete!"));
     }
 }
 
 void HuffmanEncodingWindow::StepBack(){
+
+    std::vector<std::shared_ptr<HuffmanEncoding::Process>> StepBackArray = Core.StepBack();
+    if (StepBackArray.empty()){
+        return;
+    }
+    if (StepBackArray[0]->Class == HuffmanEncoding::ProcessClass::ETreeNode){
+        for (std::shared_ptr<HuffmanEncoding::Process> StepBackProcess : StepBackArray){
+            std::shared_ptr<HuffmanEncoding::TreeNodeProcess> TreeNodeProcess = std::static_pointer_cast<HuffmanEncoding::TreeNodeProcess>(StepBackProcess);
+            std::vector<std::shared_ptr<HuffmanEncoding::TreeNodeProcess>> AddProcessArray;
+            if (TreeNodeProcess->Type == HuffmanEncoding::ProcessType::ERemove){
+                RemoveFrequencyColumn(TreeNodeProcess->Str.c_str());
+                if (ui->Content_Huffman != nullptr){
+                    ui->Content_Huffman->RemoveSphere(TreeNodeProcess->Str.c_str());
+                    ui->Content_Huffman->update();
+                }
+            }
+            else if (TreeNodeProcess->Type == HuffmanEncoding::ProcessType::EAdd){
+                AddFrequencyColumn(TreeNodeProcess->Str.c_str(), TreeNodeProcess->Frequency);
+                if (ui->Content_Huffman != nullptr){
+                    ui->Content_Huffman->RemoveLine(TreeNodeProcess->Str.c_str());
+                    if (TreeNodeProcess->Str.size() == 1){
+                        ui->Content_Huffman->RemoveSphere(TreeNodeProcess->Str.c_str());
+                    }
+                    ui->Content_Huffman->update();
+                }
+            }
+        }
+    }
+    else if (StepBackArray[0]->Class == HuffmanEncoding::ProcessClass::EBinary){
+        for (std::shared_ptr<HuffmanEncoding::Process> StepBackProcess : StepBackArray){
+            std::shared_ptr<HuffmanEncoding::BinaryProcess> BinaryProcess = std::static_pointer_cast<HuffmanEncoding::BinaryProcess>(StepBackProcess);
+            if (BinaryProcess->Type == HuffmanEncoding::ProcessType::ERemove){
+                if (ui->Content_Huffman != nullptr){
+                    ui->Content_Huffman->RemoveEdgeWord(BinaryProcess->StrTarget.c_str());
+                    ui->Content_Huffman->update();
+                }
+            }
+        }
+    }
 
 }
 

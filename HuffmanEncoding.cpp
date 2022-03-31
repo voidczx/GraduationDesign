@@ -105,10 +105,12 @@ const std::vector<std::shared_ptr<HuffmanEncoding::Process>> HuffmanEncoding::St
         std::shared_ptr<TreeNodeProcess> RemoveFirstNodeProcess(new TreeNodeProcess());
         RemoveFirstNodeProcess->Type = ProcessType::ERemove;
         RemoveFirstNodeProcess->Str = FirstNode->Word;
+        RemoveFirstNodeProcess->Frequency = FirstNode->Value;
         Output.push_back(RemoveFirstNodeProcess);
         std::shared_ptr<TreeNodeProcess> RemoveSecondNodeProcess(new TreeNodeProcess());
         RemoveSecondNodeProcess->Type = ProcessType::ERemove;
         RemoveSecondNodeProcess->Str = SecondNode->Word;
+        RemoveSecondNodeProcess->Frequency = SecondNode->Value;
         Output.push_back(RemoveSecondNodeProcess);
 
         // Add Nodes
@@ -234,6 +236,108 @@ const std::vector<std::shared_ptr<HuffmanEncoding::Process>> HuffmanEncoding::St
 const std::vector<std::shared_ptr<HuffmanEncoding::Process>> HuffmanEncoding::StepBack(){
 
     std::vector<std::shared_ptr<HuffmanEncoding::Process>> Output;
+    if (ProcessStack.empty()){
+        return Output;
+    }
+    if (bBinaryBuildCompleted){
+        return Output;
+    }
+    std::vector<std::shared_ptr<Process>> LastProcesses = ProcessStack.back();
+    ProcessStack.pop_back();
+    if (LastProcesses.size() <= 0){
+        return Output;
+    }
+    if (LastProcesses[0]->Class == ProcessClass::ETreeNode){
+        std::vector<std::shared_ptr<TreeNodeProcess>> AddFrequencyProcessArray;
+        for (std::shared_ptr<Process> LastProcess : LastProcesses){
+            std::shared_ptr<TreeNodeProcess> LastTreeNodeProcess = std::static_pointer_cast<TreeNodeProcess>(LastProcess);
+            if (LastTreeNodeProcess->Type == ProcessType::EAdd){
+                std::string ParentWord = LastTreeNodeProcess->Str;
+                std::shared_ptr<TreeNodeProcess> ViewProcess(new TreeNodeProcess());
+                ViewProcess->Type = ProcessType::ERemove;
+                ViewProcess->Str = ParentWord;
+                Output.push_back(ViewProcess);
+                if (TreeNodeMap.count(ParentWord) > 0){
+                    HuffmanTreeNode* ParentTreeNode = TreeNodeMap[ParentWord];
+                    if (ParentTreeNode != nullptr){
+                        if (ParentTreeNode->LeftChild != nullptr){
+                            ParentTreeNode->LeftChild->Parent = nullptr;
+                        }
+                        if (ParentTreeNode->RightChild != nullptr){
+                            ParentTreeNode->RightChild->Parent = nullptr;
+                        }
+                    }
+                    TreeNodeMap.erase(ParentWord);
+                    delete ParentTreeNode;
+                }
+                RemoveFrequencyNode(ParentWord);
+            }
+            else if (LastTreeNodeProcess->Type == ProcessType::ERemove){
+                std::string ChildWord = LastTreeNodeProcess->Str;
+                int32_t ChildFrequency = LastTreeNodeProcess->Frequency;
+                std::shared_ptr<TreeNodeProcess> ViewProcess(new TreeNodeProcess());
+                ViewProcess->Type = ProcessType::EAdd;
+                ViewProcess->Frequency = ChildFrequency;
+                ViewProcess->Str = ChildWord;
+                if (TreeNodeMap.count(ChildWord) > 0 && ChildWord.size() == 1){
+                    HuffmanTreeNode* ChildTreeNode = TreeNodeMap[ChildWord];
+                    if (ChildTreeNode != nullptr){
+                        if (ChildTreeNode->LeftChild != nullptr){
+                            ChildTreeNode->LeftChild->Parent = nullptr;
+                        }
+                        if (ChildTreeNode->RightChild != nullptr){
+                            ChildTreeNode->RightChild->Parent = nullptr;
+                        }
+                    }
+                    TreeNodeMap.erase(ChildWord);
+                    delete ChildTreeNode;
+                }
+                AddFrequencyProcessArray.push_back(ViewProcess);
+            }
+        }
+        for (int32_t Index = AddFrequencyProcessArray.size() - 1; Index >= 0; Index--){
+            AddFrequencyNode(AddFrequencyProcessArray[Index]->Str, AddFrequencyProcessArray[Index]->Frequency);
+            Output.push_back(AddFrequencyProcessArray[Index]);
+        }
+        if (bTreeBuildCompleted){
+            Root = nullptr;
+            bTreeBuildCompleted = false;
+        }
+    }
+    else if (LastProcesses[0]->Class == ProcessClass::EBinary){
+        for (std::shared_ptr<Process> LastProcess : LastProcesses){
+            std::shared_ptr<BinaryProcess> LastBinaryProcess = std::static_pointer_cast<BinaryProcess>(LastProcess);
+            if (LastBinaryProcess->Type == ProcessType::EAdd){
+                std::shared_ptr<BinaryProcess> ViewProcess(new BinaryProcess());
+                ViewProcess->Type = ProcessType::ERemove;
+                ViewProcess->StrSource = LastBinaryProcess->StrSource;
+                ViewProcess->StrTarget = LastBinaryProcess->StrTarget;
+                ViewProcess->Value = "";
+                Output.push_back(ViewProcess);
+                if (TreeIter != nullptr && TreeIter->Parent != nullptr){
+                    if (TreeIter->Parent->LeftChild != nullptr && TreeIter == TreeIter->Parent->LeftChild){
+                        TreeIter = TreeIter->Parent;
+                        TreeIter->EncodingResult = "";
+                        if (TreeIter == Root->LeftChild){
+                            TreeIter = nullptr;
+                        }
+                    }
+                    else if (TreeIter->Parent->RightChild != nullptr && TreeIter == TreeIter->Parent->RightChild){
+                        TreeIter = TreeIter->Parent->LeftChild;
+                        if (TreeIter->RightChild == nullptr){
+                            TreeIter->EncodingResult = "";
+                        }
+                        else{
+                            while (TreeIter->RightChild != nullptr){
+                                TreeIter = TreeIter->RightChild;
+                            }
+                            TreeIter->EncodingResult = "";
+                        }
+                    }
+                }
+            }
+        }
+    }
     return Output;
 
 }

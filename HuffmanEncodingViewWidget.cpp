@@ -99,6 +99,16 @@ void HuffmanEncodingViewWidget::AddEncodingResult(const QString& InWord, const Q
     EncodingResultMap.insert(InWord, InEncodingResult);
 }
 
+void HuffmanEncodingViewWidget::RemoveSphere(const QString &InWord){
+    if (SphereMap.contains(InWord)){
+        QPoint SpherePos = SphereMap[InWord];
+        if (SpherePos.y() == Start.y() && Start.x() == SpherePos.x() + HorizontalDistance * 2){
+            Start = QPoint(Start.x() - HorizontalDistance * 3, Start.y());
+        }
+    }
+    SphereMap.remove(InWord);
+}
+
 void HuffmanEncodingViewWidget::paintEvent(QPaintEvent *event){
     if (event == nullptr){
         return;
