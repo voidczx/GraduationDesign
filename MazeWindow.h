@@ -2,6 +2,7 @@
 #define MAZEWINDOW_H
 
 #include <QWidget>
+#include "Maze.h"
 
 namespace Ui {
 class MazeWindow;
@@ -56,6 +57,7 @@ private:
 
     QTimer* AutoPlayerTimer = nullptr;
     class QGridLayout* ContentLayout = nullptr;
+    Maze Core;
 
     Ui::MazeWindow *ui;
 

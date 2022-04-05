@@ -14,6 +14,7 @@ const int32_t MazeWindow::MapSize = 19;
 
 MazeWindow::MazeWindow(QWidget *parent) :
     QWidget(parent),
+    Core(MapSize, MapSize),
     ui(new Ui::MazeWindow)
 {
     ui->setupUi(this);

@@ -14,6 +14,7 @@ SOURCES += \
     HuffmanEncoding.cpp \
     HuffmanEncodingViewWidget.cpp \
     HuffmanEncodingWindow.cpp \
+    Maze.cpp \
     MazeWindow.cpp \
     main.cpp \
     mainwindow.cpp
@@ -24,6 +25,7 @@ HEADERS += \
     HuffmanEncoding.h \
     HuffmanEncodingViewWidget.h \
     HuffmanEncodingWindow.h \
+    Maze.h \
     MazeWindow.h \
     mainwindow.h
 
