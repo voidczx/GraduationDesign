@@ -17,40 +17,58 @@ Maze::Maze(const int32_t& InRowNum, const int32_t& InColNum) : RowNum(InRowNum),
     }
 }
 
+void Maze::ClearAllDynamic(){
+    bSuccess = false;
+    bFail = false;
+    CurrentPoint.reset();
+    for (int32_t Row = 0; Row < RowNum; Row++){
+        for (int32_t Col = 0; Col < ColNum; Col++){
+            if (IsUnitDynamicType(MazeMap[Row][Col])){
+                MazeMap[Row][Col]->Type = Maze::MazeUnitType::ENone;
+            }
+        }
+    }
+    PathStack.clear();
+    ProcessStack.clear();
+}
+
 void Maze::ClearAll(){
 
 }
 
-void Maze::SetStartPoint(const int32_t& InRowNum, const int32_t& InColNum){
+bool Maze::SetStartPoint(const int32_t& InRowNum, const int32_t& InColNum){
     std::shared_ptr<MazeUnit> NewStartPoint = MazeMap[InRowNum][InColNum];
     NewStartPoint->Type = MazeUnitType::EStartPoint;
     if (StartPoint){
         if (IsUnitEqual(StartPoint, NewStartPoint)){
-            return;
+            return false;
         }
         StartPoint->Type = MazeUnitType::ENone;
     }
     StartPoint = NewStartPoint;
+    return true;
 }
 
-void Maze::SetFinishPoint(const int32_t& InRowNum, const int32_t& InColNum){
+bool Maze::SetFinishPoint(const int32_t& InRowNum, const int32_t& InColNum){
     std::shared_ptr<MazeUnit> NewFinishPoint = MazeMap[InRowNum][InColNum];
     NewFinishPoint->Type = MazeUnitType::EFinishPoint;
     if (FinishPoint){
         if (IsUnitEqual(FinishPoint, NewFinishPoint)){
-            return;
+            return false;
         }
         FinishPoint->Type = MazeUnitType::ENone;
     }
     FinishPoint = NewFinishPoint;
+    return true;
 }
 
-void Maze::SetBlockPoint(const int32_t& InRowNum, const int32_t& InColNum){
+bool Maze::SetBlockPoint(const int32_t& InRowNum, const int32_t& InColNum){
     std::shared_ptr<MazeUnit> NewBlockPoint = MazeMap[InRowNum][InColNum];
     NewBlockPoint->Type = MazeUnitType::EBlock;
+    return true;
 }
 
-void Maze::ClearPoint(const int32_t& InRowNum, const int32_t& InColNum){
+bool Maze::ClearPoint(const int32_t& InRowNum, const int32_t& InColNum){
     std::shared_ptr<MazeUnit> WaitClearPoint = MazeMap[InRowNum][InColNum];
     WaitClearPoint->Type = MazeUnitType::ENone;
     if (IsUnitEqual(WaitClearPoint, StartPoint)){
@@ -59,6 +77,7 @@ void Maze::ClearPoint(const int32_t& InRowNum, const int32_t& InColNum){
     else if (IsUnitEqual(WaitClearPoint, FinishPoint)){
         FinishPoint.reset();
     }
+    return true;
 }
 
 void Maze::EditComplete(std::vector<std::shared_ptr<Maze::Process>>& OutProcessArray, bool& OutHasWalkableNeighbour){
@@ -70,6 +89,31 @@ void Maze::EditComplete(std::vector<std::shared_ptr<Maze::Process>>& OutProcessA
     }
     CurrentPoint = StartPoint;
     ProcessNeighbour(CurrentPoint->Row, CurrentPoint->Col, OutProcessArray, OutHasWalkableNeighbour);
+}
+
+Maze::MazeUnitType Maze::GetUnitType(const int32_t& InRow, const int32_t& InCol){
+    if (MazeMap[InRow][InCol]){
+        return MazeMap[InRow][InCol]->Type;
+    }
+    return Maze::MazeUnitType::ENone;
+}
+
+bool Maze::GetStartPointPosition(int32_t& OutRow, int32_t& OutCol){
+    if (!StartPoint){
+        return false;
+    }
+    OutRow = StartPoint->Row;
+    OutCol = StartPoint->Col;
+    return true;
+}
+
+bool Maze::GetFinishPointPosition(int32_t& OutRow, int32_t& OutCol){
+    if (!FinishPoint){
+        return false;
+    }
+    OutRow = FinishPoint->Row;
+    OutCol = FinishPoint->Col;
+    return true;
 }
 
 std::vector<std::shared_ptr<Maze::Process>> Maze::StepForward(){
@@ -240,6 +284,23 @@ bool Maze::IsUnitWalkable(const std::shared_ptr<MazeUnit>& InUnit){
         break;
     }
     return true;
+}
+
+bool Maze::IsUnitDynamicType(const std::shared_ptr<Maze::MazeUnit>& InUnit){
+    if (!InUnit){
+        return false;
+    }
+    switch (InUnit->Type){
+    case Maze::MazeUnitType::EOpen:
+        return true;
+        break;
+    case Maze::MazeUnitType::EClose:
+        return true;
+        break;
+    default:
+        break;
+    }
+    return false;
 }
 
 bool Maze::CanUnitChangeType(const std::shared_ptr<MazeUnit>& InUnit){

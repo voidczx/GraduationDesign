@@ -13,6 +13,16 @@ class MazeWindow : public QWidget
     Q_OBJECT
 
 public:
+
+    enum class CursorMode{
+        ENone = 0,
+        EStartPoint = 1,
+        EFinishPoint = 2,
+        EBlockPoint = 3,
+        EClearPoint = 4,
+        ENum,
+    };
+
     explicit MazeWindow(QWidget *parent = nullptr);
     ~MazeWindow();
 
@@ -33,10 +43,19 @@ private slots:
     void AutoStepForwardButtonClicked();
     void AutoStepBackButtonClicked();
 
+    void StartPointButtonClicked();
+    void FinishPointButtonClicked();
+    void BlockPointButtonClicked();
+    void ClearPointButtonClicked();
+
 private:
 
     void InitializeConnection();
     void InitializeUI();
+
+    void ClearAllDynamic();
+    void ClearAll();
+    void UpdateMap();
 
     void StartAutoState(bool bInAutoPlay);
     void EndAutoState();
@@ -46,11 +65,24 @@ private:
     void StepForward();
     void StepBack();
 
+    void ChangeToStartPointMode();
+    void ChangeToFinishPointMode();
+    void ChangeToBlockPointMode();
+    void ChangeToClearPointMode();
+    void ProcessChangeMapUnit(const int32_t& InRow, const int32_t& InCol);
+
     bool bAutoState = false;
     bool bAutoPlay = false;
+    CursorMode CurrentCursorMode = CursorMode::ENone;
 
     static const QColor DefaultMapUnitColor;
     static const QColor HoverEnterDefaultMapUnitColor;
+    static const QColor BlockMapUnitColor;
+    static const QColor HoverEnterBlockMapUnitColor;
+    static const QColor StartPointMapUnitColor;
+    static const QColor HoverEnterStartPointMapUnitColor;
+    static const QColor FinishPointMapUnitColor;
+    static const QColor HoverEnterFinishPointMapUnitColor;
 
     static const int32_t AutoPlayIntervalTime;
     static const int32_t MapSize;

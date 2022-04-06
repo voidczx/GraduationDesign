@@ -70,13 +70,18 @@ public:
     bool IsSuccessful() const { return bSuccess; }
     bool IsFail() const { return bFail; }
 
+    void ClearAllDynamic();
     void ClearAll();
 
-    void SetStartPoint(const int32_t& InRowNum, const int32_t& InColNum);
-    void SetFinishPoint(const int32_t& InRowNum, const int32_t& InColNum);
-    void SetBlockPoint(const int32_t& InRowNum, const int32_t& InColNum);
-    void ClearPoint(const int32_t& InRowNum, const int32_t& InColNum);
+    bool SetStartPoint(const int32_t& InRowNum, const int32_t& InColNum);
+    bool SetFinishPoint(const int32_t& InRowNum, const int32_t& InColNum);
+    bool SetBlockPoint(const int32_t& InRowNum, const int32_t& InColNum);
+    bool ClearPoint(const int32_t& InRowNum, const int32_t& InColNum);
     void EditComplete(std::vector<std::shared_ptr<Process>>& OutProcessArray, bool& OutHasWalkableNeighbour);
+
+    MazeUnitType GetUnitType(const int32_t& InRow, const int32_t& InCol);
+    bool GetStartPointPosition(int32_t& OutRow, int32_t& OutCol);
+    bool GetFinishPointPosition(int32_t& OutRow, int32_t& OutCol);
 
     std::vector<std::shared_ptr<Process>> StepForward();
 
@@ -84,6 +89,7 @@ private:
 
     bool IsUnitEqual(const std::shared_ptr<MazeUnit>& Left, const std::shared_ptr<MazeUnit>& Right);
     bool IsUnitWalkable(const std::shared_ptr<MazeUnit>& InUnit);
+    bool IsUnitDynamicType(const std::shared_ptr<MazeUnit>& InUnit);
     bool CanUnitChangeType(const std::shared_ptr<MazeUnit>& InUnit);
     void ProcessNeighbour(const int32_t& InRow, const int32_t InCol, std::vector<std::shared_ptr<Process>>& OutProcessArray, bool& OutHasWalkableNeighbour);
 
