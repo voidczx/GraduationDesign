@@ -28,7 +28,7 @@ void Maze::ClearAllDynamic(){
             }
         }
     }
-    PathStack.clear();
+    OpenMap.clear();
     ProcessStack.clear();
 }
 
@@ -57,8 +57,10 @@ bool Maze::SetFinishPoint(const int32_t& InRowNum, const int32_t& InColNum){
             return false;
         }
         FinishPoint->Type = MazeUnitType::ENone;
+        FinishPoint->Value = -1;
     }
     FinishPoint = NewFinishPoint;
+    FinishPoint->Value = 0;
     return true;
 }
 
@@ -80,7 +82,7 @@ bool Maze::ClearPoint(const int32_t& InRowNum, const int32_t& InColNum){
     return true;
 }
 
-void Maze::EditComplete(std::vector<std::shared_ptr<Maze::Process>>& OutProcessArray, bool& OutHasWalkableNeighbour){
+void Maze::EditComplete(std::vector<std::shared_ptr<Maze::Process>>& OutProcessArray){
     if (!StartPoint || !FinishPoint){
         return;
     }
@@ -88,7 +90,7 @@ void Maze::EditComplete(std::vector<std::shared_ptr<Maze::Process>>& OutProcessA
         return;
     }
     CurrentPoint = StartPoint;
-    ProcessNeighbour(CurrentPoint->Row, CurrentPoint->Col, OutProcessArray, OutHasWalkableNeighbour);
+    ProcessNeighbour(CurrentPoint->Row, CurrentPoint->Col, OutProcessArray);
 }
 
 Maze::MazeUnitType Maze::GetUnitType(const int32_t& InRow, const int32_t& InCol){
@@ -116,110 +118,37 @@ bool Maze::GetFinishPointPosition(int32_t& OutRow, int32_t& OutCol){
     return true;
 }
 
+bool Maze::GetCurrentPointPosition(int32_t& OutRow, int32_t& OutCol){
+    if (!CurrentPoint){
+        return false;
+    }
+    OutRow = CurrentPoint->Row;
+    OutCol = CurrentPoint->Col;
+    return true;
+}
+
 std::vector<std::shared_ptr<Maze::Process>> Maze::StepForward(){
     std::vector<std::shared_ptr<Maze::Process>> OutProcessArray;
     if (!StartPoint || !FinishPoint){
         return OutProcessArray;
     }
+    if (bSuccess || bFail){
+        return OutProcessArray;
+    }
     if (!CurrentPoint){
-        bool bHasWalkableNeighbour = false;
-        EditComplete(OutProcessArray, bHasWalkableNeighbour);
-        if (!bHasWalkableNeighbour){
-            bFail = false;
-            return OutProcessArray;
-        }
+       return OutProcessArray;
+    }
+    if (OpenMap.empty()){
+        bFail = true;
+        return OutProcessArray;
     }
 
     // Find Next Point
-    bool bNeedTraceBack = true;
     std::shared_ptr<Maze::MazeUnit> NextPoint;
-    int32_t LowestValue = -1;
-    if (CurrentPoint->Row > 0){
-        std::shared_ptr<Maze::MazeUnit> UpUnit = MazeMap[CurrentPoint->Row-1][CurrentPoint->Col];
-        if (IsUnitWalkable(UpUnit)){
-            if (UpUnit->Value > 0){
-                if (LowestValue < 0){
-                    LowestValue = UpUnit->Value;
-                    NextPoint = UpUnit;
-                    bNeedTraceBack = false;
-                }
-                else{
-                    if (UpUnit->Value <  LowestValue){
-                        LowestValue = UpUnit->Value;
-                        NextPoint = UpUnit;
-                        bNeedTraceBack = false;
-                    }
-                }
-            }
-        }
-    }
-    if (CurrentPoint->Row < RowNum - 1){
-        std::shared_ptr<Maze::MazeUnit> DownUnit = MazeMap[CurrentPoint->Row+1][CurrentPoint->Col];
-        if (IsUnitWalkable(DownUnit)){
-            if (DownUnit->Value > 0){
-                if (LowestValue < 0){
-                    LowestValue = DownUnit->Value;
-                    NextPoint = DownUnit;
-                    bNeedTraceBack = false;
-                }
-                else{
-                    if (DownUnit->Value <  LowestValue){
-                        LowestValue = DownUnit->Value;
-                        NextPoint = DownUnit;
-                        bNeedTraceBack = false;
-                    }
-                }
-            }
-        }
-    }
-    if (CurrentPoint->Col > 0){
-        std::shared_ptr<Maze::MazeUnit> LeftUnit = MazeMap[CurrentPoint->Row][CurrentPoint->Col-1];
-        if (IsUnitWalkable(LeftUnit)){
-            if (LeftUnit->Value > 0){
-                if (LowestValue < 0){
-                    LowestValue = LeftUnit->Value;
-                    NextPoint = LeftUnit;
-                    bNeedTraceBack = false;
-                }
-                else{
-                    if (LeftUnit->Value <  LowestValue){
-                        LowestValue = LeftUnit->Value;
-                        NextPoint = LeftUnit;
-                        bNeedTraceBack = false;
-                    }
-                }
-            }
-        }
-    }
-    if (CurrentPoint->Col < ColNum - 1){
-        std::shared_ptr<Maze::MazeUnit> RightUnit = MazeMap[CurrentPoint->Row][CurrentPoint->Col+1];
-        if (IsUnitWalkable(RightUnit)){
-            if (RightUnit->Value > 0){
-                if (LowestValue < 0){
-                    LowestValue = RightUnit->Value;
-                    NextPoint = RightUnit;
-                    bNeedTraceBack = false;
-                }
-                else{
-                    if (RightUnit->Value <  LowestValue){
-                        LowestValue = RightUnit->Value;
-                        NextPoint = RightUnit;
-                        bNeedTraceBack = false;
-                    }
-                }
-            }
-        }
-    }
+    NextPoint = OpenMap.begin()->second;
 
-    // Trace Back When Needed
-    if (bNeedTraceBack){
-        if (!PathStack.empty()){
-            NextPoint = PathStack.back();
-            PathStack.pop_back();
-        }
-    }
-    else{
-        PathStack.push_back(CurrentPoint);
+    if (NextPoint){
+        OpenMap.erase(OpenMap.begin());
     }
 
     // Add Move Process
@@ -250,13 +179,10 @@ std::vector<std::shared_ptr<Maze::Process>> Maze::StepForward(){
         return OutProcessArray;
     }
 
-    bool bHasWalkableNeighbour = false;
-    ProcessNeighbour(CurrentPoint->Row, CurrentPoint->Col, OutProcessArray, bHasWalkableNeighbour);
-    if (!bHasWalkableNeighbour){
-        if (IsUnitEqual(CurrentPoint, StartPoint)){
-            bFail = true;
-            return OutProcessArray;
-        }
+    ProcessNeighbour(CurrentPoint->Row, CurrentPoint->Col, OutProcessArray);
+    if (OpenMap.empty()){
+        bFail = true;
+        return OutProcessArray;
     }
 
     return OutProcessArray;
@@ -308,10 +234,10 @@ bool Maze::CanUnitChangeType(const std::shared_ptr<MazeUnit>& InUnit){
         return false;
     }
     switch (InUnit->Type) {
-    case Maze::MazeUnitType::EStartPoint:
+    case Maze::MazeUnitType::EFinishPoint:
         return false;
         break;
-    case Maze::MazeUnitType::EFinishPoint:
+    case Maze::MazeUnitType::EBlock:
         return false;
         break;
     default:
@@ -320,66 +246,74 @@ bool Maze::CanUnitChangeType(const std::shared_ptr<MazeUnit>& InUnit){
     return true;
 }
 
-void Maze::ProcessNeighbour(const int32_t& InRow, const int32_t InCol, std::vector<std::shared_ptr<Maze::Process>>& OutProcessArray, bool& OutHasWalkableNeighbour){
-    OutHasWalkableNeighbour = false;
+void Maze::ProcessNeighbour(const int32_t& InRow, const int32_t InCol, std::vector<std::shared_ptr<Maze::Process>>& OutProcessArray){
+    // TODO: Change the order
     if (InRow > 0){
         std::shared_ptr<Maze::MazeUnit> UpUnit = MazeMap[InRow - 1][InCol];
         if (IsUnitWalkable(UpUnit)){
             UpUnit->Value = std::abs(FinishPoint->Row - UpUnit->Row) + std::abs(FinishPoint->Col - UpUnit->Col);
-            OutHasWalkableNeighbour = true;
-        }
-        if (CanUnitChangeType(UpUnit)){
-            UpUnit->Type = Maze::MazeUnitType::EOpen;
-            std::shared_ptr<Maze::ChangeProcess> ChangeToOpenProcess(new Maze::ChangeProcess);
-            ChangeToOpenProcess->Row = UpUnit->Row;
-            ChangeToOpenProcess->Col = UpUnit->Col;
-            ChangeToOpenProcess->Type = Maze::ChangeProcessType::EOpen;
-            OutProcessArray.push_back(ChangeToOpenProcess);
+            UpUnit->ParentRow = InRow;
+            UpUnit->ParentCol = InCol;
+            OpenMap.emplace(UpUnit->Value, UpUnit);
+            if (CanUnitChangeType(UpUnit)){
+                UpUnit->Type = Maze::MazeUnitType::EOpen;
+                std::shared_ptr<Maze::ChangeProcess> ChangeToOpenProcess(new Maze::ChangeProcess);
+                ChangeToOpenProcess->Row = UpUnit->Row;
+                ChangeToOpenProcess->Col = UpUnit->Col;
+                ChangeToOpenProcess->Type = Maze::ChangeProcessType::EOpen;
+                OutProcessArray.push_back(ChangeToOpenProcess);
+            }
         }
     }
     if (InRow < RowNum - 1){
         std::shared_ptr<Maze::MazeUnit> DownUnit = MazeMap[InRow + 1][InCol];
         if (IsUnitWalkable(DownUnit)){
             DownUnit->Value = std::abs(FinishPoint->Row - DownUnit->Row) + std::abs(FinishPoint->Col - DownUnit->Col);
-            OutHasWalkableNeighbour = true;
-        }
-        if (CanUnitChangeType(DownUnit)){
-            DownUnit->Type = Maze::MazeUnitType::EOpen;
-            std::shared_ptr<Maze::ChangeProcess> ChangeToOpenProcess(new Maze::ChangeProcess);
-            ChangeToOpenProcess->Row = DownUnit->Row;
-            ChangeToOpenProcess->Col = DownUnit->Col;
-            ChangeToOpenProcess->Type = Maze::ChangeProcessType::EOpen;
-            OutProcessArray.push_back(ChangeToOpenProcess);
+            DownUnit->ParentRow = InRow;
+            DownUnit->ParentCol = InCol;
+            OpenMap.emplace(DownUnit->Value, DownUnit);
+            if (CanUnitChangeType(DownUnit)){
+                DownUnit->Type = Maze::MazeUnitType::EOpen;
+                std::shared_ptr<Maze::ChangeProcess> ChangeToOpenProcess(new Maze::ChangeProcess);
+                ChangeToOpenProcess->Row = DownUnit->Row;
+                ChangeToOpenProcess->Col = DownUnit->Col;
+                ChangeToOpenProcess->Type = Maze::ChangeProcessType::EOpen;
+                OutProcessArray.push_back(ChangeToOpenProcess);
+            }
         }
     }
     if (InCol > 0){
         std::shared_ptr<Maze::MazeUnit> LeftUnit = MazeMap[InRow][InCol - 1];
         if (IsUnitWalkable(LeftUnit)){
             LeftUnit->Value = std::abs(FinishPoint->Row - LeftUnit->Row) + std::abs(FinishPoint->Col - LeftUnit->Col);
-            OutHasWalkableNeighbour = true;
-        }
-        if (CanUnitChangeType(LeftUnit)){
-            LeftUnit->Type = Maze::MazeUnitType::EOpen;
-            std::shared_ptr<Maze::ChangeProcess> ChangeToOpenProcess(new Maze::ChangeProcess);
-            ChangeToOpenProcess->Row = LeftUnit->Row;
-            ChangeToOpenProcess->Col = LeftUnit->Col;
-            ChangeToOpenProcess->Type = Maze::ChangeProcessType::EOpen;
-            OutProcessArray.push_back(ChangeToOpenProcess);
+            LeftUnit->ParentRow = InRow;
+            LeftUnit->ParentCol = InCol;
+            OpenMap.emplace(LeftUnit->Value, LeftUnit);
+            if (CanUnitChangeType(LeftUnit)){
+                LeftUnit->Type = Maze::MazeUnitType::EOpen;
+                std::shared_ptr<Maze::ChangeProcess> ChangeToOpenProcess(new Maze::ChangeProcess);
+                ChangeToOpenProcess->Row = LeftUnit->Row;
+                ChangeToOpenProcess->Col = LeftUnit->Col;
+                ChangeToOpenProcess->Type = Maze::ChangeProcessType::EOpen;
+                OutProcessArray.push_back(ChangeToOpenProcess);
+            }
         }
     }
     if (InCol < ColNum - 1){
         std::shared_ptr<Maze::MazeUnit> RightUnit = MazeMap[InRow][InCol + 1];
         if (IsUnitWalkable(RightUnit)){
             RightUnit->Value = std::abs(FinishPoint->Row - RightUnit->Row) + std::abs(FinishPoint->Col - RightUnit->Col);
-            OutHasWalkableNeighbour = true;
-        }
-        if (CanUnitChangeType(RightUnit)){
-            RightUnit->Type = Maze::MazeUnitType::EOpen;
-            std::shared_ptr<Maze::ChangeProcess> ChangeToOpenProcess(new Maze::ChangeProcess);
-            ChangeToOpenProcess->Row = RightUnit->Row;
-            ChangeToOpenProcess->Col = RightUnit->Col;
-            ChangeToOpenProcess->Type = Maze::ChangeProcessType::EOpen;
-            OutProcessArray.push_back(ChangeToOpenProcess);
+            RightUnit->ParentRow = InRow;
+            RightUnit->ParentCol = InCol;
+            OpenMap.emplace(RightUnit->Value, RightUnit);
+            if (CanUnitChangeType(RightUnit)){
+                RightUnit->Type = Maze::MazeUnitType::EOpen;
+                std::shared_ptr<Maze::ChangeProcess> ChangeToOpenProcess(new Maze::ChangeProcess);
+                ChangeToOpenProcess->Row = RightUnit->Row;
+                ChangeToOpenProcess->Col = RightUnit->Col;
+                ChangeToOpenProcess->Type = Maze::ChangeProcessType::EOpen;
+                OutProcessArray.push_back(ChangeToOpenProcess);
+            }
         }
     }
 }

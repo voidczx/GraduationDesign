@@ -47,6 +47,7 @@ private slots:
     void FinishPointButtonClicked();
     void BlockPointButtonClicked();
     void ClearPointButtonClicked();
+    void EditCompleteButtonClicked();
 
 private:
 
@@ -71,9 +72,16 @@ private:
     void ChangeToClearPointMode();
     void ProcessChangeMapUnit(const int32_t& InRow, const int32_t& InCol);
 
+    void ChangeLabelToDefaultColorByUnitType(class QLabel* InLabel, Maze::MazeUnitType InUnitType);
+    void ChangeLabelToHoverEnterColorByUnitType(class QLabel* InLabel, Maze::MazeUnitType InUnitType);
+
+    bool EditComplete();
+
     bool bAutoState = false;
     bool bAutoPlay = false;
+
     CursorMode CurrentCursorMode = CursorMode::ENone;
+    bool bEditComplete = false;
 
     static const QColor DefaultMapUnitColor;
     static const QColor HoverEnterDefaultMapUnitColor;
@@ -83,6 +91,7 @@ private:
     static const QColor HoverEnterStartPointMapUnitColor;
     static const QColor FinishPointMapUnitColor;
     static const QColor HoverEnterFinishPointMapUnitColor;
+    static const QColor CurrentMapUnitColor;
 
     static const int32_t AutoPlayIntervalTime;
     static const int32_t MapSize;

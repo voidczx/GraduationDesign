@@ -16,6 +16,7 @@ const QColor MazeWindow::StartPointMapUnitColor = QColor(0xFFCC33);
 const QColor MazeWindow::HoverEnterStartPointMapUnitColor = QColor(0xFFDD66);
 const QColor MazeWindow::FinishPointMapUnitColor = QColor(0xFF99CC);
 const QColor MazeWindow::HoverEnterFinishPointMapUnitColor = QColor(0xFFCCFF);
+const QColor MazeWindow::CurrentMapUnitColor = QColor(0xFFFFFF);
 
 const int32_t MazeWindow::AutoPlayIntervalTime = 800;
 const int32_t MazeWindow::MapSize = 19;
@@ -39,60 +40,34 @@ MazeWindow::~MazeWindow()
 bool MazeWindow::eventFilter(QObject *watched, QEvent *event){
     if (QLabel* EventLabel = qobject_cast<QLabel*>(watched)){
         if (event->type() == QEvent::Type::Enter){
+            int32_t CurrentRow = -1;
+            int32_t CurrentCol = -1;
+            Core.GetCurrentPointPosition(CurrentRow, CurrentCol);
             if (ContentLayout != nullptr){
                 int32_t Index = ContentLayout->indexOf(EventLabel);
                 int32_t LabelRow = Index / MapSize;
                 int32_t LabelCol = Index % MapSize;
+                if (LabelRow == CurrentRow && LabelCol == CurrentCol){
+                    return true;
+                }
                 Maze::MazeUnitType LabelUnitType = Core.GetUnitType(LabelRow, LabelCol);
-                if (LabelUnitType == Maze::MazeUnitType::ENone){
-                    QPalette HoverEnterColor(QPalette::Background, HoverEnterDefaultMapUnitColor);
-                    EventLabel->setAutoFillBackground(true);
-                    EventLabel->setPalette(HoverEnterColor);
-                }
-                else if (LabelUnitType == Maze::MazeUnitType::EStartPoint){
-                    QPalette HoverEnterColor(QPalette::Background, HoverEnterStartPointMapUnitColor);
-                    EventLabel->setAutoFillBackground(true);
-                    EventLabel->setPalette(HoverEnterColor);
-                }
-                else if (LabelUnitType == Maze::MazeUnitType::EFinishPoint){
-                    QPalette HoverEnterColor(QPalette::Background, HoverEnterFinishPointMapUnitColor);
-                    EventLabel->setAutoFillBackground(true);
-                    EventLabel->setPalette(HoverEnterColor);
-                }
-                else if (LabelUnitType == Maze::MazeUnitType::EBlock){
-                    QPalette HoverEnterColor(QPalette::Background, HoverEnterBlockMapUnitColor);
-                    EventLabel->setAutoFillBackground(true);
-                    EventLabel->setPalette(HoverEnterColor);
-                }
+                ChangeLabelToHoverEnterColorByUnitType(EventLabel, LabelUnitType);
                 return true;
             }
         }
         else if (event->type() == QEvent::Type::Leave){
+            int32_t CurrentRow = -1;
+            int32_t CurrentCol = -1;
+            Core.GetCurrentPointPosition(CurrentRow, CurrentCol);
             if (ContentLayout != nullptr){
                 int32_t Index = ContentLayout->indexOf(EventLabel);
                 int32_t LabelRow = Index / MapSize;
                 int32_t LabelCol = Index % MapSize;
+                if (LabelRow == CurrentRow && LabelCol == CurrentCol){
+                    return true;
+                }
                 Maze::MazeUnitType LabelUnitType = Core.GetUnitType(LabelRow, LabelCol);
-                if (LabelUnitType == Maze::MazeUnitType::ENone){
-                    QPalette HoverLeaveColor(QPalette::Background, DefaultMapUnitColor);
-                    EventLabel->setAutoFillBackground(true);
-                    EventLabel->setPalette(HoverLeaveColor);
-                }
-                else if (LabelUnitType == Maze::MazeUnitType::EStartPoint){
-                    QPalette HoverLeaveColor(QPalette::Background, StartPointMapUnitColor);
-                    EventLabel->setAutoFillBackground(true);
-                    EventLabel->setPalette(HoverLeaveColor);
-                }
-                else if (LabelUnitType == Maze::MazeUnitType::EFinishPoint){
-                    QPalette HoverLeaveColor(QPalette::Background, FinishPointMapUnitColor);
-                    EventLabel->setAutoFillBackground(true);
-                    EventLabel->setPalette(HoverLeaveColor);
-                }
-                else if (LabelUnitType == Maze::MazeUnitType::EBlock){
-                    QPalette HoverLeaveColor(QPalette::Background, BlockMapUnitColor);
-                    EventLabel->setAutoFillBackground(true);
-                    EventLabel->setPalette(HoverLeaveColor);
-                }
+                ChangeLabelToDefaultColorByUnitType(EventLabel, LabelUnitType);
                 return true;
             }
         }
@@ -191,6 +166,10 @@ void MazeWindow::ClearPointButtonClicked(){
     ChangeToClearPointMode();
 }
 
+void MazeWindow::EditCompleteButtonClicked(){
+    EditComplete();
+}
+
 void MazeWindow::InitializeConnection(){
     connect(ui->Button_Back, SIGNAL(clicked(bool)), this, SLOT(BackButtonClick()));
     connect(this, SIGNAL(OnBackButtonClick()), this, SLOT(CloseSelfWindow()));
@@ -204,6 +183,7 @@ void MazeWindow::InitializeConnection(){
     connect(ui->Button_FinishPoint, SIGNAL(clicked(bool)), this, SLOT(FinishPointButtonClicked()));
     connect(ui->Button_ObstaclePoint, SIGNAL(clicked(bool)), this, SLOT(BlockPointButtonClicked()));
     connect(ui->Button_ClearPoint, SIGNAL(clicked(bool)), this, SLOT(ClearPointButtonClicked()));
+    connect(ui->Button_CompleteEdit, SIGNAL(clicked(bool)), this, SLOT(EditCompleteButtonClicked()));
 }
 
 void MazeWindow::InitializeUI(){
@@ -231,6 +211,7 @@ void MazeWindow::InitializeUI(){
 void MazeWindow::ClearAllDynamic(){
     Core.ClearAllDynamic();
     UpdateMap();
+    bEditComplete = false;
 }
 
 void MazeWindow::ClearAll(){
@@ -319,7 +300,36 @@ void MazeWindow::AutoPause(){
 }
 
 void MazeWindow::StepForward(){
-
+    if (!bEditComplete){
+        EditComplete();
+    }
+    std::vector<std::shared_ptr<Maze::Process>> StepForwardProcessArray = Core.StepForward();
+    for (std::shared_ptr<Maze::Process> StepForwardProcess : StepForwardProcessArray){
+        if (StepForwardProcess->Class == Maze::ProcessClass::EMove){
+            std::shared_ptr<Maze::MoveProcess> MoveProcess = std::static_pointer_cast<Maze::MoveProcess>(StepForwardProcess);
+            if (MoveProcess){
+                if (ContentLayout != nullptr){
+                    Maze::MazeUnitType OldType = Core.GetUnitType(MoveProcess->FromRow, MoveProcess->FromCol);
+                    QLayoutItem* OldCurrentLabelItem = ContentLayout->itemAtPosition(MoveProcess->FromRow, MoveProcess->FromCol);
+                    if (OldCurrentLabelItem != nullptr){
+                        QLabel* OldCurrentLabel = qobject_cast<QLabel*>(OldCurrentLabelItem->widget());
+                        if (OldCurrentLabel != nullptr){
+                            ChangeLabelToDefaultColorByUnitType(OldCurrentLabel, OldType);
+                        }
+                    }
+                    QLayoutItem* NewCurrentLabelItem = ContentLayout->itemAtPosition(MoveProcess->ToRow, MoveProcess->ToCol);
+                    if (NewCurrentLabelItem != nullptr){
+                        QLabel* NewCurrentLabel = qobject_cast<QLabel*>(NewCurrentLabelItem->widget());
+                        if (NewCurrentLabel != nullptr){
+                            QPalette NormalUnitColor(QPalette::Background, CurrentMapUnitColor);
+                            NewCurrentLabel->setAutoFillBackground(true);
+                            NewCurrentLabel->setPalette(NormalUnitColor);
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 void MazeWindow::StepBack(){
@@ -430,6 +440,103 @@ void MazeWindow::ProcessChangeMapUnit(const int32_t& InRow, const int32_t& InCol
         UnitLabel->setAutoFillBackground(true);
         UnitLabel->setPalette(NormalUnitColor);
     }
+}
+
+void MazeWindow::ChangeLabelToDefaultColorByUnitType(QLabel* InLabel, Maze::MazeUnitType InUnitType){
+    if (InLabel == nullptr){
+        return;
+    }
+    if (InUnitType == Maze::MazeUnitType::ENone){
+        QPalette HoverLeaveColor(QPalette::Background, DefaultMapUnitColor);
+        InLabel->setAutoFillBackground(true);
+        InLabel->setPalette(HoverLeaveColor);
+    }
+    else if (InUnitType == Maze::MazeUnitType::EStartPoint){
+        QPalette HoverLeaveColor(QPalette::Background, StartPointMapUnitColor);
+        InLabel->setAutoFillBackground(true);
+        InLabel->setPalette(HoverLeaveColor);
+    }
+    else if (InUnitType == Maze::MazeUnitType::EFinishPoint){
+        QPalette HoverLeaveColor(QPalette::Background, FinishPointMapUnitColor);
+        InLabel->setAutoFillBackground(true);
+        InLabel->setPalette(HoverLeaveColor);
+    }
+    else if (InUnitType == Maze::MazeUnitType::EBlock){
+        QPalette HoverLeaveColor(QPalette::Background, BlockMapUnitColor);
+        InLabel->setAutoFillBackground(true);
+        InLabel->setPalette(HoverLeaveColor);
+    }
+    else if (InUnitType == Maze::MazeUnitType::EOpen){
+        QPalette HoverEnterColor(QPalette::Background, DefaultMapUnitColor);
+        InLabel->setAutoFillBackground(true);
+        InLabel->setPalette(HoverEnterColor);
+    }
+    else if (InUnitType == Maze::MazeUnitType::EClose){
+        QPalette HoverEnterColor(QPalette::Background, DefaultMapUnitColor);
+        InLabel->setAutoFillBackground(true);
+        InLabel->setPalette(HoverEnterColor);
+    }
+}
+
+void MazeWindow::ChangeLabelToHoverEnterColorByUnitType(QLabel* InLabel, Maze::MazeUnitType InUnitType){
+    if (InLabel == nullptr){
+        return;
+    }
+    if (InUnitType == Maze::MazeUnitType::ENone){
+        QPalette HoverEnterColor(QPalette::Background, HoverEnterDefaultMapUnitColor);
+        InLabel->setAutoFillBackground(true);
+        InLabel->setPalette(HoverEnterColor);
+    }
+    else if (InUnitType == Maze::MazeUnitType::EStartPoint){
+        QPalette HoverEnterColor(QPalette::Background, HoverEnterStartPointMapUnitColor);
+        InLabel->setAutoFillBackground(true);
+        InLabel->setPalette(HoverEnterColor);
+    }
+    else if (InUnitType == Maze::MazeUnitType::EFinishPoint){
+        QPalette HoverEnterColor(QPalette::Background, HoverEnterFinishPointMapUnitColor);
+        InLabel->setAutoFillBackground(true);
+        InLabel->setPalette(HoverEnterColor);
+    }
+    else if (InUnitType == Maze::MazeUnitType::EBlock){
+        QPalette HoverEnterColor(QPalette::Background, HoverEnterBlockMapUnitColor);
+        InLabel->setAutoFillBackground(true);
+        InLabel->setPalette(HoverEnterColor);
+    }
+    else if (InUnitType == Maze::MazeUnitType::EOpen){
+        QPalette HoverEnterColor(QPalette::Background, HoverEnterDefaultMapUnitColor);
+        InLabel->setAutoFillBackground(true);
+        InLabel->setPalette(HoverEnterColor);
+    }
+    else if (InUnitType == Maze::MazeUnitType::EClose){
+        QPalette HoverEnterColor(QPalette::Background, HoverEnterDefaultMapUnitColor);
+        InLabel->setAutoFillBackground(true);
+        InLabel->setPalette(HoverEnterColor);
+    }
+}
+
+bool MazeWindow::EditComplete(){
+    int32_t FinishPointRow = -1;
+    int32_t FinishPointCol = -1;
+    int32_t StartPointRow = -1;
+    int32_t StartPointCol = -1;
+    if (!Core.GetStartPointPosition(StartPointRow, StartPointCol) || !Core.GetFinishPointPosition(FinishPointRow, FinishPointCol)){
+        return false;
+    }
+    std::vector<std::shared_ptr<Maze::Process>> OutProcessArray;
+    Core.EditComplete(OutProcessArray);
+    if (ContentLayout != nullptr){
+        QLayoutItem* StartPointLabelItem = ContentLayout->itemAtPosition(StartPointRow, StartPointCol);
+        if (StartPointLabelItem != nullptr){
+            QLabel* StartPointLabel = qobject_cast<QLabel*>(StartPointLabelItem->widget());
+            if (StartPointLabel != nullptr){
+                QPalette NormalUnitColor(QPalette::Background, CurrentMapUnitColor);
+                StartPointLabel->setAutoFillBackground(true);
+                StartPointLabel->setPalette(NormalUnitColor);
+            }
+        }
+    }
+    bEditComplete = true;
+    return true;
 }
 
 

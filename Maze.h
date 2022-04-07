@@ -5,6 +5,7 @@
 #include "vector"
 #include "memory"
 #include "deque"
+#include "map"
 
 class Maze
 {
@@ -26,6 +27,8 @@ public:
         int32_t Row = -1;
         int32_t Col = -1;
         int32_t Value = -1;
+        int32_t ParentRow = -1;
+        int32_t ParentCol = -1;
     };
 
     enum class ProcessClass{
@@ -77,11 +80,12 @@ public:
     bool SetFinishPoint(const int32_t& InRowNum, const int32_t& InColNum);
     bool SetBlockPoint(const int32_t& InRowNum, const int32_t& InColNum);
     bool ClearPoint(const int32_t& InRowNum, const int32_t& InColNum);
-    void EditComplete(std::vector<std::shared_ptr<Process>>& OutProcessArray, bool& OutHasWalkableNeighbour);
+    void EditComplete(std::vector<std::shared_ptr<Process>>& OutProcessArray);
 
     MazeUnitType GetUnitType(const int32_t& InRow, const int32_t& InCol);
     bool GetStartPointPosition(int32_t& OutRow, int32_t& OutCol);
     bool GetFinishPointPosition(int32_t& OutRow, int32_t& OutCol);
+    bool GetCurrentPointPosition(int32_t& OutRow, int32_t& OutCol);
 
     std::vector<std::shared_ptr<Process>> StepForward();
 
@@ -91,7 +95,7 @@ private:
     bool IsUnitWalkable(const std::shared_ptr<MazeUnit>& InUnit);
     bool IsUnitDynamicType(const std::shared_ptr<MazeUnit>& InUnit);
     bool CanUnitChangeType(const std::shared_ptr<MazeUnit>& InUnit);
-    void ProcessNeighbour(const int32_t& InRow, const int32_t InCol, std::vector<std::shared_ptr<Process>>& OutProcessArray, bool& OutHasWalkableNeighbour);
+    void ProcessNeighbour(const int32_t& InRow, const int32_t InCol, std::vector<std::shared_ptr<Process>>& OutProcessArray);
 
     int32_t RowNum = -1;
     int32_t ColNum = -1;
@@ -100,7 +104,7 @@ private:
     std::shared_ptr<MazeUnit> StartPoint;
     std::shared_ptr<MazeUnit> FinishPoint;
     std::shared_ptr<MazeUnit> CurrentPoint;
-    std::deque<std::shared_ptr<MazeUnit>> PathStack;
+    std::map<int32_t, std::shared_ptr<MazeUnit>> OpenMap;
     std::deque<std::vector<std::shared_ptr<Process>>> ProcessStack;
     std::vector<std::vector<std::shared_ptr<MazeUnit>>> MazeMap;
 
