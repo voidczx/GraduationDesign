@@ -7,6 +7,7 @@
 #include "QDebug"
 #include "QMouseEvent"
 #include "QCursor"
+#include "QMessageBox"
 
 const QColor MazeWindow::DefaultMapUnitColor = QColor(0xbfbfbf);
 const QColor MazeWindow::HoverEnterDefaultMapUnitColor = QColor(0xdfdfdf);
@@ -17,6 +18,9 @@ const QColor MazeWindow::HoverEnterStartPointMapUnitColor = QColor(0xFFDD66);
 const QColor MazeWindow::FinishPointMapUnitColor = QColor(0xFF99CC);
 const QColor MazeWindow::HoverEnterFinishPointMapUnitColor = QColor(0xFFCCFF);
 const QColor MazeWindow::CurrentMapUnitColor = QColor(0xFFFFFF);
+const QColor MazeWindow::OpenMapUnitColor = QColor(0x00FF00);
+const QColor MazeWindow::CloseMapUnitColor = QColor(0xFF0000);
+const QColor MazeWindow::PathMapUnitColor = QColor(0x0000FF);
 
 const int32_t MazeWindow::AutoPlayIntervalTime = 800;
 const int32_t MazeWindow::MapSize = 19;
@@ -167,7 +171,19 @@ void MazeWindow::ClearPointButtonClicked(){
 }
 
 void MazeWindow::EditCompleteButtonClicked(){
-    EditComplete();
+    EndAutoState();
+    bool bMapValid = EditComplete();
+    if (!bMapValid){
+        QMessageBox::warning(this, "Map is invalid", "a valid map need at one start point and one finsh point!");
+    }
+}
+
+void MazeWindow::ViewMapButtonPress(){
+    UpdateSpecialMap();
+}
+
+void MazeWindow::ViewMapButtonRelease(){
+    UpdateMap();
 }
 
 void MazeWindow::InitializeConnection(){
@@ -184,6 +200,9 @@ void MazeWindow::InitializeConnection(){
     connect(ui->Button_ObstaclePoint, SIGNAL(clicked(bool)), this, SLOT(BlockPointButtonClicked()));
     connect(ui->Button_ClearPoint, SIGNAL(clicked(bool)), this, SLOT(ClearPointButtonClicked()));
     connect(ui->Button_CompleteEdit, SIGNAL(clicked(bool)), this, SLOT(EditCompleteButtonClicked()));
+
+    connect(ui->Button_ViewMap, SIGNAL(pressed()), this, SLOT(ViewMapButtonPress()));
+    connect(ui->Button_ViewMap, SIGNAL(released()), this, SLOT(ViewMapButtonRelease()));
 }
 
 void MazeWindow::InitializeUI(){
@@ -219,7 +238,58 @@ void MazeWindow::ClearAll(){
 }
 
 void MazeWindow::UpdateMap(){
+    if (ContentLayout == nullptr){
+        return;
+    }
+    int32_t CurrentPointRow = -1;
+    int32_t CurrentPointCol = -1;
+    Core.GetCurrentPointPosition(CurrentPointRow, CurrentPointCol);
+    for (int32_t Row = 0; Row < MapSize; Row++){
+        for (int32_t Col = 0; Col < MapSize; Col++){
+            if (Row == CurrentPointRow && Col == CurrentPointCol){
+                continue;
+            }
+            QLayoutItem* LabelItem = ContentLayout->itemAtPosition(Row, Col);
+            if (LabelItem != nullptr){
+                QLabel* Label = qobject_cast<QLabel*>(LabelItem->widget());
+                if (Label != nullptr){
+                    Maze::MazeUnitType LabelUnitType = Core.GetUnitType(Row, Col);
+                    ChangeLabelToDefaultColorByUnitType(Label, LabelUnitType);
+                    if (LabelUnitType == Maze::MazeUnitType::EOpen){
+                        Label->setText(QString());
+                    }
+                }
+            }
+        }
+    }
+}
 
+void MazeWindow::UpdateSpecialMap(){
+    if (ContentLayout == nullptr){
+        return;
+    }
+    int32_t CurrentPointRow = -1;
+    int32_t CurrentPointCol = -1;
+    Core.GetCurrentPointPosition(CurrentPointRow, CurrentPointCol);
+    for (int32_t Row = 0; Row < MapSize; Row++){
+        for (int32_t Col = 0; Col < MapSize; Col++){
+            if (Row == CurrentPointRow && Col == CurrentPointCol){
+                continue;
+            }
+            QLayoutItem* LabelItem = ContentLayout->itemAtPosition(Row, Col);
+            if (LabelItem != nullptr){
+                QLabel* Label = qobject_cast<QLabel*>(LabelItem->widget());
+                if (Label != nullptr){
+                    Maze::MazeUnitType LabelUnitType = Core.GetUnitType(Row, Col);
+                    ChangeLabelToSpecialColorByUnitType(Label, LabelUnitType);
+                    if (LabelUnitType == Maze::MazeUnitType::EOpen){
+                        int32_t Value = Core.GetUnitValue(Row, Col);
+                        Label->setText(QString::number(Value));
+                    }
+                }
+            }
+        }
+    }
 }
 
 void MazeWindow::StartAutoState(bool bInAutoPlay){
@@ -301,7 +371,12 @@ void MazeWindow::AutoPause(){
 
 void MazeWindow::StepForward(){
     if (!bEditComplete){
-        EditComplete();
+        bool bValidMap = EditComplete();
+        if (!bValidMap){
+            QMessageBox::warning(this, "Map is invalid", "a valid map need at one start point and one finsh point!");
+            EndAutoState();
+            return;
+        }
     }
     std::vector<std::shared_ptr<Maze::Process>> StepForwardProcessArray = Core.StepForward();
     for (std::shared_ptr<Maze::Process> StepForwardProcess : StepForwardProcessArray){
@@ -330,10 +405,27 @@ void MazeWindow::StepForward(){
             }
         }
     }
+    if (Core.IsSuccessful()){
+        OnSuccess();
+    }
+    if (Core.IsFail()){
+        OnFail();
+    }
 }
 
 void MazeWindow::StepBack(){
 
+}
+
+void MazeWindow::OnSuccess(){
+    EndAutoPlay();
+    UpdateMap();
+    QMessageBox::information(this, QString("Success"), QString("Success!"));
+}
+
+void MazeWindow::OnFail(){
+    EndAutoPlay();
+    QMessageBox::information(this, QString("Fail"), QString("Fail!"));
 }
 
 void MazeWindow::ChangeToStartPointMode(){
@@ -377,6 +469,12 @@ void MazeWindow::ChangeToClearPointMode(){
 }
 
 void MazeWindow::ProcessChangeMapUnit(const int32_t& InRow, const int32_t& InCol){
+    if (CurrentCursorMode == CursorMode::ENone){
+        return;
+    }
+    if (bAutoState){
+        EndAutoState();
+    }
     if (ContentLayout == nullptr){
         return;
     }
@@ -476,6 +574,11 @@ void MazeWindow::ChangeLabelToDefaultColorByUnitType(QLabel* InLabel, Maze::Maze
         InLabel->setAutoFillBackground(true);
         InLabel->setPalette(HoverEnterColor);
     }
+    else if (InUnitType == Maze::MazeUnitType::EPath){
+        QPalette HoverEnterColor(QPalette::Background, PathMapUnitColor);
+        InLabel->setAutoFillBackground(true);
+        InLabel->setPalette(HoverEnterColor);
+    }
 }
 
 void MazeWindow::ChangeLabelToHoverEnterColorByUnitType(QLabel* InLabel, Maze::MazeUnitType InUnitType){
@@ -514,6 +617,42 @@ void MazeWindow::ChangeLabelToHoverEnterColorByUnitType(QLabel* InLabel, Maze::M
     }
 }
 
+void MazeWindow::ChangeLabelToSpecialColorByUnitType(QLabel* InLabel, Maze::MazeUnitType InUnitType){
+    if (InLabel == nullptr){
+        return;
+    }
+    if (InUnitType == Maze::MazeUnitType::ENone){
+        QPalette HoverEnterColor(QPalette::Background, DefaultMapUnitColor);
+        InLabel->setAutoFillBackground(true);
+        InLabel->setPalette(HoverEnterColor);
+    }
+    else if (InUnitType == Maze::MazeUnitType::EStartPoint){
+        QPalette HoverEnterColor(QPalette::Background, StartPointMapUnitColor);
+        InLabel->setAutoFillBackground(true);
+        InLabel->setPalette(HoverEnterColor);
+    }
+    else if (InUnitType == Maze::MazeUnitType::EFinishPoint){
+        QPalette HoverEnterColor(QPalette::Background, FinishPointMapUnitColor);
+        InLabel->setAutoFillBackground(true);
+        InLabel->setPalette(HoverEnterColor);
+    }
+    else if (InUnitType == Maze::MazeUnitType::EBlock){
+        QPalette HoverEnterColor(QPalette::Background, BlockMapUnitColor);
+        InLabel->setAutoFillBackground(true);
+        InLabel->setPalette(HoverEnterColor);
+    }
+    else if (InUnitType == Maze::MazeUnitType::EOpen){
+        QPalette HoverEnterColor(QPalette::Background, OpenMapUnitColor);
+        InLabel->setAutoFillBackground(true);
+        InLabel->setPalette(HoverEnterColor);
+    }
+    else if (InUnitType == Maze::MazeUnitType::EClose){
+        QPalette HoverEnterColor(QPalette::Background, CloseMapUnitColor);
+        InLabel->setAutoFillBackground(true);
+        InLabel->setPalette(HoverEnterColor);
+    }
+}
+
 bool MazeWindow::EditComplete(){
     int32_t FinishPointRow = -1;
     int32_t FinishPointCol = -1;
@@ -536,6 +675,8 @@ bool MazeWindow::EditComplete(){
         }
     }
     bEditComplete = true;
+    CurrentCursorMode = CursorMode::ENone;
+    setCursor(Qt::ArrowCursor);
     return true;
 }
 

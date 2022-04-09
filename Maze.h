@@ -19,6 +19,7 @@ public:
         EBlock = 3,
         EClose = 4,
         EOpen = 5,
+        EPath = 6,
         ENum,
     };
 
@@ -83,6 +84,7 @@ public:
     void EditComplete(std::vector<std::shared_ptr<Process>>& OutProcessArray);
 
     MazeUnitType GetUnitType(const int32_t& InRow, const int32_t& InCol);
+    int32_t GetUnitValue(const int32_t& InRow, const int32_t& InCol);
     bool GetStartPointPosition(int32_t& OutRow, int32_t& OutCol);
     bool GetFinishPointPosition(int32_t& OutRow, int32_t& OutCol);
     bool GetCurrentPointPosition(int32_t& OutRow, int32_t& OutCol);
@@ -104,7 +106,7 @@ private:
     std::shared_ptr<MazeUnit> StartPoint;
     std::shared_ptr<MazeUnit> FinishPoint;
     std::shared_ptr<MazeUnit> CurrentPoint;
-    std::map<int32_t, std::shared_ptr<MazeUnit>> OpenMap;
+    std::multimap<int32_t, std::shared_ptr<MazeUnit>> OpenMap;
     std::deque<std::vector<std::shared_ptr<Process>>> ProcessStack;
     std::vector<std::vector<std::shared_ptr<MazeUnit>>> MazeMap;
 

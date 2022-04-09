@@ -49,6 +49,9 @@ private slots:
     void ClearPointButtonClicked();
     void EditCompleteButtonClicked();
 
+    void ViewMapButtonPress();
+    void ViewMapButtonRelease();
+
 private:
 
     void InitializeConnection();
@@ -57,6 +60,7 @@ private:
     void ClearAllDynamic();
     void ClearAll();
     void UpdateMap();
+    void UpdateSpecialMap();
 
     void StartAutoState(bool bInAutoPlay);
     void EndAutoState();
@@ -65,6 +69,8 @@ private:
     void AutoPause();
     void StepForward();
     void StepBack();
+    void OnSuccess();
+    void OnFail();
 
     void ChangeToStartPointMode();
     void ChangeToFinishPointMode();
@@ -74,6 +80,7 @@ private:
 
     void ChangeLabelToDefaultColorByUnitType(class QLabel* InLabel, Maze::MazeUnitType InUnitType);
     void ChangeLabelToHoverEnterColorByUnitType(class QLabel* InLabel, Maze::MazeUnitType InUnitType);
+    void ChangeLabelToSpecialColorByUnitType(class QLabel* InLabel, Maze::MazeUnitType InUnitType);
 
     bool EditComplete();
 
@@ -92,6 +99,9 @@ private:
     static const QColor FinishPointMapUnitColor;
     static const QColor HoverEnterFinishPointMapUnitColor;
     static const QColor CurrentMapUnitColor;
+    static const QColor OpenMapUnitColor;
+    static const QColor CloseMapUnitColor;
+    static const QColor PathMapUnitColor;
 
     static const int32_t AutoPlayIntervalTime;
     static const int32_t MapSize;
