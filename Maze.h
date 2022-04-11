@@ -27,7 +27,7 @@ public:
         MazeUnitType Type = MazeUnitType::ENone;
         int32_t Row = -1;
         int32_t Col = -1;
-        int32_t Value = -1;
+        float Value = -1.0f;
         int32_t ParentRow = -1;
         int32_t ParentCol = -1;
     };
@@ -64,7 +64,8 @@ public:
         ChangeProcess() : Process(ProcessClass::EChange) {}
         int32_t Row = -1;
         int32_t Col = -1;
-        ChangeProcessType Type = ChangeProcessType::ENone;
+        ChangeProcessType OldType = ChangeProcessType::ENone;
+        ChangeProcessType NewType = ChangeProcessType::ENone;
     };
 
     Maze(const int32_t& InRowNum, const int32_t& InColNum);
@@ -84,12 +85,13 @@ public:
     void EditComplete(std::vector<std::shared_ptr<Process>>& OutProcessArray);
 
     MazeUnitType GetUnitType(const int32_t& InRow, const int32_t& InCol);
-    int32_t GetUnitValue(const int32_t& InRow, const int32_t& InCol);
+    float GetUnitValue(const int32_t& InRow, const int32_t& InCol);
     bool GetStartPointPosition(int32_t& OutRow, int32_t& OutCol);
     bool GetFinishPointPosition(int32_t& OutRow, int32_t& OutCol);
     bool GetCurrentPointPosition(int32_t& OutRow, int32_t& OutCol);
 
     std::vector<std::shared_ptr<Process>> StepForward();
+    std::vector<std::shared_ptr<Process>> StepBack();
 
 private:
 
@@ -97,7 +99,12 @@ private:
     bool IsUnitWalkable(const std::shared_ptr<MazeUnit>& InUnit);
     bool IsUnitDynamicType(const std::shared_ptr<MazeUnit>& InUnit);
     bool CanUnitChangeType(const std::shared_ptr<MazeUnit>& InUnit);
+    ChangeProcessType TransUnitTypeToChangeProcessType(const MazeUnitType& InUnitType);
+    MazeUnitType TransChangeProcessTypeToUnitType(const ChangeProcessType& InChangeProcessType);
     void ProcessNeighbour(const int32_t& InRow, const int32_t InCol, std::vector<std::shared_ptr<Process>>& OutProcessArray);
+    bool RemoveFromOpenMap(const std::shared_ptr<MazeUnit>& InUnit);
+    int32_t GetPathDepth(const std::shared_ptr<MazeUnit>& InUnit);
+    float CalculateUnitValue(const std::shared_ptr<MazeUnit>& InUnit);
 
     int32_t RowNum = -1;
     int32_t ColNum = -1;
@@ -106,7 +113,7 @@ private:
     std::shared_ptr<MazeUnit> StartPoint;
     std::shared_ptr<MazeUnit> FinishPoint;
     std::shared_ptr<MazeUnit> CurrentPoint;
-    std::multimap<int32_t, std::shared_ptr<MazeUnit>> OpenMap;
+    std::multimap<float, std::shared_ptr<MazeUnit>> OpenMap;
     std::deque<std::vector<std::shared_ptr<Process>>> ProcessStack;
     std::vector<std::vector<std::shared_ptr<MazeUnit>>> MazeMap;
 

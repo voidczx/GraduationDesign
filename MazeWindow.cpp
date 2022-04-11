@@ -283,7 +283,7 @@ void MazeWindow::UpdateSpecialMap(){
                     Maze::MazeUnitType LabelUnitType = Core.GetUnitType(Row, Col);
                     ChangeLabelToSpecialColorByUnitType(Label, LabelUnitType);
                     if (LabelUnitType == Maze::MazeUnitType::EOpen){
-                        int32_t Value = Core.GetUnitValue(Row, Col);
+                        float Value = Core.GetUnitValue(Row, Col);
                         Label->setText(QString::number(Value));
                     }
                 }
@@ -414,7 +414,36 @@ void MazeWindow::StepForward(){
 }
 
 void MazeWindow::StepBack(){
-
+    if (!bEditComplete){
+        return;
+    }
+    std::vector<std::shared_ptr<Maze::Process>> StepBackProcessArray = Core.StepBack();
+    for (std::shared_ptr<Maze::Process> StepForwardProcess : StepBackProcessArray){
+        if (StepForwardProcess->Class == Maze::ProcessClass::EMove){
+            std::shared_ptr<Maze::MoveProcess> MoveProcess = std::static_pointer_cast<Maze::MoveProcess>(StepForwardProcess);
+            if (MoveProcess){
+                if (ContentLayout != nullptr){
+                    Maze::MazeUnitType OldType = Core.GetUnitType(MoveProcess->FromRow, MoveProcess->FromCol);
+                    QLayoutItem* OldCurrentLabelItem = ContentLayout->itemAtPosition(MoveProcess->FromRow, MoveProcess->FromCol);
+                    if (OldCurrentLabelItem != nullptr){
+                        QLabel* OldCurrentLabel = qobject_cast<QLabel*>(OldCurrentLabelItem->widget());
+                        if (OldCurrentLabel != nullptr){
+                            ChangeLabelToDefaultColorByUnitType(OldCurrentLabel, OldType);
+                        }
+                    }
+                    QLayoutItem* NewCurrentLabelItem = ContentLayout->itemAtPosition(MoveProcess->ToRow, MoveProcess->ToCol);
+                    if (NewCurrentLabelItem != nullptr){
+                        QLabel* NewCurrentLabel = qobject_cast<QLabel*>(NewCurrentLabelItem->widget());
+                        if (NewCurrentLabel != nullptr){
+                            QPalette NormalUnitColor(QPalette::Background, CurrentMapUnitColor);
+                            NewCurrentLabel->setAutoFillBackground(true);
+                            NewCurrentLabel->setPalette(NormalUnitColor);
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 void MazeWindow::OnSuccess(){
