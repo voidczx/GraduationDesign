@@ -77,6 +77,8 @@ private:
     QStack<QLabel*> ChessStack; // TODO: move to core
     QMap<QLabel*, bool> MemoryMap; // TODO: delete and change RecoverMap()
 
+    class QGridLayout* ContentLayout = nullptr;
+
     bool bAutoState = false;
     bool bAutoPlay = false;
     QTimer* AutoPlayerTimer = nullptr;

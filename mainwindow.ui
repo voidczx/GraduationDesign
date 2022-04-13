@@ -14,45 +14,113 @@
    <string notr="true">Visual Algorithm -czx</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <widget class="QPushButton" name="Button_Maze">
-    <property name="geometry">
-     <rect>
-      <x>90</x>
-      <y>240</y>
-      <width>180</width>
-      <height>70</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Maze</string>
-    </property>
-   </widget>
-   <widget class="QPushButton" name="Button_EightQueen">
-    <property name="geometry">
-     <rect>
-      <x>390</x>
-      <y>240</y>
-      <width>180</width>
-      <height>70</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Eight Queen</string>
-    </property>
-   </widget>
-   <widget class="QPushButton" name="Button_Huffman">
-    <property name="geometry">
-     <rect>
-      <x>670</x>
-      <y>240</y>
-      <width>180</width>
-      <height>70</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Huffman Encoding</string>
-    </property>
-   </widget>
+   <layout class="QGridLayout" name="gridLayout">
+    <item row="0" column="0">
+     <layout class="QVBoxLayout" name="verticalLayout">
+      <property name="leftMargin">
+       <number>100</number>
+      </property>
+      <property name="topMargin">
+       <number>220</number>
+      </property>
+      <property name="rightMargin">
+       <number>50</number>
+      </property>
+      <property name="bottomMargin">
+       <number>220</number>
+      </property>
+      <item>
+       <widget class="QPushButton" name="Button_Maze">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>350</width>
+          <height>200</height>
+         </size>
+        </property>
+        <property name="text">
+         <string>Maze</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item row="0" column="1">
+     <layout class="QVBoxLayout" name="verticalLayout_2">
+      <property name="leftMargin">
+       <number>75</number>
+      </property>
+      <property name="topMargin">
+       <number>220</number>
+      </property>
+      <property name="rightMargin">
+       <number>75</number>
+      </property>
+      <property name="bottomMargin">
+       <number>220</number>
+      </property>
+      <item>
+       <widget class="QPushButton" name="Button_EightQueen">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>350</width>
+          <height>200</height>
+         </size>
+        </property>
+        <property name="text">
+         <string>Eight Queen</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item row="0" column="2">
+     <layout class="QVBoxLayout" name="verticalLayout_3">
+      <property name="leftMargin">
+       <number>50</number>
+      </property>
+      <property name="topMargin">
+       <number>220</number>
+      </property>
+      <property name="rightMargin">
+       <number>100</number>
+      </property>
+      <property name="bottomMargin">
+       <number>220</number>
+      </property>
+      <item>
+       <widget class="QPushButton" name="Button_Huffman">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>350</width>
+          <height>200</height>
+         </size>
+        </property>
+        <property name="text">
+         <string>Huffman Encoding</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+   </layout>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">

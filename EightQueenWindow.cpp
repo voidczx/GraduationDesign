@@ -37,8 +37,8 @@ bool EightQueenWindow::eventFilter(QObject *watched, QEvent *event){
         if (event->type() == QEvent::MouseButtonPress){
             if (QMouseEvent* MouseEvent = dynamic_cast<QMouseEvent*>(event)){
                 if (MouseEvent->button() == Qt::LeftButton){
-                    if (ui->GridLayout_EightQueen != nullptr){
-                        int Index = ui->GridLayout_EightQueen->indexOf(EventLabel);
+                    if (ContentLayout != nullptr){
+                        int Index = ContentLayout->indexOf(EventLabel);
                         uint8_t Row = Index / MapSize;
                         uint8_t Col = Index % MapSize;
                         if (bAutoState){
@@ -139,22 +139,31 @@ void EightQueenWindow::InitializeConnection(){
 }
 
 void EightQueenWindow::InitializeMap(){
-    if (ui->GridLayout_EightQueen != nullptr){
+    if (ContentLayout != nullptr){
+        // Error
+        return;
+    }
+    if (ui->Content_HuffMan == nullptr){
+        return;
+    }
+    ContentLayout = new QGridLayout(ui->Content_HuffMan);
+    if (ContentLayout != nullptr){
+        ContentLayout->setSpacing(0);
         for (int Row = 0; Row < MapSize; Row++){
             for (int Col = 0; Col < MapSize; Col++){
-                QLayoutItem* UnitItem = ui->GridLayout_EightQueen->itemAtPosition(Row, Col);
-                if (UnitItem != nullptr){
-                    QLabel* UnitLabel = qobject_cast<QLabel*>(UnitItem->widget());
-                    if (UnitLabel != nullptr){
-                        const bool bBlack = ((Row & 1) ^ (Col & 1));
-                        if (bBlack){
-                            UnitLabel->setStyleSheet("QLabel{background:#000000;}");
-                        }
-                        else{
-                            UnitLabel->setStyleSheet("QLabel{background:#ffffff;}");
-                        }
-                        UnitLabel->installEventFilter(this);
+                QLabel* NewLabel = new QLabel(ui->Content_HuffMan);
+                if (NewLabel != nullptr){
+                    NewLabel->setSizePolicy(QSizePolicy::Policy::Ignored, QSizePolicy::Policy::Ignored);
+                    ContentLayout->addWidget(NewLabel, Row, Col, 1, 1);
+                    const bool bBlack = ((Row & 1) ^ (Col & 1));
+                    if (bBlack){
+                        NewLabel->setStyleSheet("QLabel{background:#000000;}");
                     }
+                    else{
+                        NewLabel->setStyleSheet("QLabel{background:#ffffff;}");
+                    }
+                    NewLabel->installEventFilter(this);
+                    NewLabel->show();
                 }
             }
         }
@@ -191,30 +200,25 @@ void EightQueenWindow::TryRemoveChess(){
 }
 
 void EightQueenWindow::AfterAddChessSuccess(const uint8_t& Row, const uint8_t& Col){
-    if (ui->GridLayout_EightQueen != nullptr){
-        QLayoutItem* UnitItem = ui->GridLayout_EightQueen->itemAtPosition(Row, Col);
+    if (ContentLayout != nullptr){
+        QLayoutItem* UnitItem = ContentLayout->itemAtPosition(Row, Col);
         if (UnitItem != nullptr){
             QLabel* UnitLabel = qobject_cast<QLabel*>(UnitItem->widget());
             if (UnitLabel != nullptr){
-                QLabel* NewChessLabel = new QLabel(ui->layoutWidget);
-                NewChessLabel->setGeometry(UnitLabel->pos().x(),
-                                      UnitLabel->pos().y(),
-                                      UnitLabel->geometry().width(),
-                                      UnitLabel->geometry().height());
+                QSizePolicy OldSizePolicy = UnitLabel->sizePolicy();
                 QPixmap QueenChessPixmap(QString(":/EightQueen/QueenChess.jpg"));
-                QueenChessPixmap.scaled(NewChessLabel->size());
-                NewChessLabel->setScaledContents(true);
-                NewChessLabel->setPixmap(QueenChessPixmap);
-                NewChessLabel->show();
-                ChessStack.push(NewChessLabel);
+                QueenChessPixmap.scaled(UnitLabel->size());
+                UnitLabel->setScaledContents(true);
+                UnitLabel->setPixmap(QueenChessPixmap);
+                ChessStack.push(UnitLabel);
             }
         }
     }
 }
 
 void EightQueenWindow::AfterAddChessFail(const uint8_t& Row, const uint8_t& Col){
-    if (ui->GridLayout_EightQueen != nullptr){
-        QLayoutItem* UnitItem = ui->GridLayout_EightQueen->itemAtPosition(Row, Col);
+    if (ContentLayout != nullptr){
+        QLayoutItem* UnitItem = ContentLayout->itemAtPosition(Row, Col);
         if (UnitItem != nullptr){
             QLabel* RedLabel = qobject_cast<QLabel*>(UnitItem->widget());
             if (RedLabel != nullptr){
@@ -239,44 +243,19 @@ void EightQueenWindow::AfterAddChessFail(const uint8_t& Row, const uint8_t& Col)
 void EightQueenWindow::AfterReduceChess(){
     QLabel* RemoveChess = ChessStack.top();
     if (RemoveChess != nullptr){
-       const QRect& OriginalGeometry = RemoveChess->geometry();
-       const QRect MagnifyingGeometry = QRect(
-                   OriginalGeometry.x() - OriginalGeometry.width() * 0.2f / 2.0f,
-                   OriginalGeometry.y() - OriginalGeometry.height() * 0.2f / 2.0f,
-                   OriginalGeometry.width() * 1.2f,
-                   OriginalGeometry.height() * 1.2f);
-       const QRect ShrinkingGeometry = QRect(
-                   OriginalGeometry.x() + OriginalGeometry.width() * 0.2f / 2.0f,
-                   OriginalGeometry.y() + OriginalGeometry.height() * 0.2f / 2.0f,
-                   OriginalGeometry.width() * 0.8f,
-                   OriginalGeometry.height() * 0.8f);
-       QParallelAnimationGroup* ParallelGroup = new QParallelAnimationGroup(RemoveChess);
-       QSequentialAnimationGroup* ScaleGroup = new QSequentialAnimationGroup(RemoveChess);
-       QPropertyAnimation* MagnifyingAnimation = new QPropertyAnimation(RemoveChess, "geometry");
-       MagnifyingAnimation->setStartValue(OriginalGeometry);
-       MagnifyingAnimation->setEndValue(MagnifyingGeometry);
-       MagnifyingAnimation->setDuration(500);
-       ScaleGroup->addAnimation(MagnifyingAnimation);
-       QPropertyAnimation* ShrinkingAnimation = new QPropertyAnimation(RemoveChess, "geometry");
-       ShrinkingAnimation->setStartValue(MagnifyingGeometry);
-       ShrinkingAnimation->setEndValue(ShrinkingGeometry);
-       ShrinkingAnimation->setDuration(500);
-       ScaleGroup->addAnimation(ShrinkingAnimation);
-       ParallelGroup->addAnimation(ScaleGroup);
-       QGraphicsOpacityEffect* LabelOpacity = new QGraphicsOpacityEffect(RemoveChess);
-       LabelOpacity->setOpacity(1.0f);
-       RemoveChess->setGraphicsEffect(LabelOpacity);
-       if (LabelOpacity != nullptr){
-           QPropertyAnimation* OpacityGroup = new QPropertyAnimation(LabelOpacity, "opacity");
-           OpacityGroup->setStartValue(1.0f);
-           OpacityGroup->setEndValue(0.0f);
-           OpacityGroup->setDuration(1000);
-           ParallelGroup->addAnimation(OpacityGroup);
+       RemoveChess->clear();
+       if (ContentLayout != nullptr){
+           int32_t Index = ContentLayout->indexOf(RemoveChess);
+           int32_t Row = Index / MapSize;
+           int32_t Col = Index % MapSize;
+           const bool bBlack = ((Row & 1) ^ (Col & 1));
+           if (bBlack){
+               RemoveChess->setStyleSheet(QString("QLabel{background:#000000;}"));
+           }
+           else{
+               RemoveChess->setStyleSheet(QString("QLabel{background:#ffffff;}"));
+           }
        }
-       ParallelGroup->start(QAbstractAnimation::DeleteWhenStopped);
-       connect(ParallelGroup, &QAbstractAnimation::finished, [RemoveChess]{
-            RemoveChess->deleteLater();
-       });
        ChessStack.pop();
     }
 }
@@ -288,8 +267,8 @@ void EightQueenWindow::ViewMap(){
     for (uint8_t Row = 0; Row < MapSize; Row++){
         for (uint8_t Col = 0; Col < MapSize; Col++){
             if (!Core.IsPositionValid(Row, Col)){
-                if (ui->GridLayout_EightQueen != nullptr){
-                    QLayoutItem* UnitItem = ui->GridLayout_EightQueen->itemAtPosition(Row, Col);
+                if (ContentLayout != nullptr){
+                    QLayoutItem* UnitItem = ContentLayout->itemAtPosition(Row, Col);
                     if (UnitItem != nullptr){
                         QLabel* InvalidLabel = qobject_cast<QLabel*>(UnitItem->widget());
                         if (InvalidLabel != nullptr){
@@ -304,8 +283,8 @@ void EightQueenWindow::ViewMap(){
                 if (bAutoState){
                     if (Row == Core.GetLastAutoReduceUnit().Row){
                         if (Col <= Core.GetLastAutoReduceUnit().Col){
-                            if (ui->GridLayout_EightQueen != nullptr){
-                                QLayoutItem* UnitItem = ui->GridLayout_EightQueen->itemAtPosition(Row, Col);
+                            if (ContentLayout != nullptr){
+                                QLayoutItem* UnitItem = ContentLayout->itemAtPosition(Row, Col);
                                 if (UnitItem != nullptr){
                                     QLabel* InvalidLabel = qobject_cast<QLabel*>(UnitItem->widget());
                                     if (InvalidLabel != nullptr){
