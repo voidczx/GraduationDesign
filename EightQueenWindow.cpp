@@ -205,7 +205,6 @@ void EightQueenWindow::AfterAddChessSuccess(const uint8_t& Row, const uint8_t& C
         if (UnitItem != nullptr){
             QLabel* UnitLabel = qobject_cast<QLabel*>(UnitItem->widget());
             if (UnitLabel != nullptr){
-                QSizePolicy OldSizePolicy = UnitLabel->sizePolicy();
                 QPixmap QueenChessPixmap(QString(":/EightQueen/QueenChess.jpg"));
                 QueenChessPixmap.scaled(UnitLabel->size());
                 UnitLabel->setScaledContents(true);

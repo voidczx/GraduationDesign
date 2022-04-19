@@ -121,7 +121,8 @@ void HuffmanEncodingWindow::InitializeUI(){
 
 void HuffmanEncodingWindow::ClearAll(){
     if (ui->TableWidget_HuffmanFrequency != nullptr){
-        for (int Col = 0; Col < ui->TableWidget_HuffmanFrequency->columnCount(); Col++){
+        int ColumnCount = ui->TableWidget_HuffmanFrequency->columnCount();
+        for (int Col = 0; Col < ColumnCount; Col++){
             ui->TableWidget_HuffmanFrequency->removeColumn(0);
         }
     }

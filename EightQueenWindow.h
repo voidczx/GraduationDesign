@@ -74,8 +74,8 @@ private:
 
     EightQueen Core;
 
-    QStack<QLabel*> ChessStack; // TODO: move to core
-    QMap<QLabel*, bool> MemoryMap; // TODO: delete and change RecoverMap()
+    QStack<QLabel*> ChessStack;
+    QMap<QLabel*, bool> MemoryMap;
 
     class QGridLayout* ContentLayout = nullptr;
 
