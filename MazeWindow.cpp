@@ -396,9 +396,11 @@ void MazeWindow::StepForward(){
                     if (NewCurrentLabelItem != nullptr){
                         QLabel* NewCurrentLabel = qobject_cast<QLabel*>(NewCurrentLabelItem->widget());
                         if (NewCurrentLabel != nullptr){
-                            QPalette NormalUnitColor(QPalette::Background, CurrentMapUnitColor);
-                            NewCurrentLabel->setAutoFillBackground(true);
-                            NewCurrentLabel->setPalette(NormalUnitColor);
+                            if (Core.GetUnitType(MoveProcess->ToRow, MoveProcess->ToCol) != Maze::MazeUnitType::EFinishPoint){
+                                QPalette NormalUnitColor(QPalette::Background, CurrentMapUnitColor);
+                                NewCurrentLabel->setAutoFillBackground(true);
+                                NewCurrentLabel->setPalette(NormalUnitColor);
+                            }
                         }
                     }
                 }
